@@ -1,0 +1,16 @@
+enum errorTypes {
+	ERROR_UNFOUND_IDENTIFIER = 1,
+	ERROR_UNRECOGNIZED_TOKEN,
+	ERROR_INVALID_ARGUMENT
+};
+
+typedef enum errorTypes error_t;
+
+typedef struct {
+	error_t errorType;
+	char* description;
+	int lineNum;
+} error;
+
+char* error_type(error);
+void throw_error(error);
