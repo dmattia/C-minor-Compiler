@@ -1,8 +1,8 @@
-#include "token.h"
-#include "stdio.h"
-#include "string.h"
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 #include "error.h"
-#include "stdlib.h"
+#include "token.h"
 
 extern token_t yylex();
 extern int yylineno;
@@ -20,7 +20,23 @@ int main(int argc, char*argv[]) {
 		if (strcmp(argv[i],"-scan")==0) scan = 1;
 	}
 
-	if(scan && argc > 2) scan_input(argv[2]);
+	if(scan) {
+		if(argc > 2) {
+			scan_input(argv[2]);
+		} else {
+			error e;
+			e.errorType = ERROR_INVALID_ARGUMENT;
+			e.description = "Must include a file name";
+			e.lineNum = -1;
+			throw_error(e);
+		}
+	} else {
+			error e;
+			e.errorType = ERROR_INVALID_ARGUMENT;
+			e.description = "Must include a flag argument";
+			e.lineNum = -1;
+			throw_error(e);
+	}
 
 	return 0;
 }
@@ -40,7 +56,7 @@ void scan_input(const char* filename) {
 	}
 	token = yylex();
 	while(token) {
-		printf("%s",token_string(token));
+		printf("%s\n",token_string(token));
 		token = yylex();
 	}	
 }

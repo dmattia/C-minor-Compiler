@@ -1,3 +1,6 @@
+#ifndef ERROR_H
+#define ERROR_H
+
 enum errorTypes {
 	ERROR_UNFOUND_IDENTIFIER = 1,
 	ERROR_UNRECOGNIZED_TOKEN,
@@ -14,3 +17,5 @@ typedef struct {
 
 char* error_type(error);
 void throw_error(error);
+
+#endif
