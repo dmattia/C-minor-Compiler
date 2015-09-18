@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include "error.h"
 #include "token.h"
+#include "scannerUtil.h"
 
 extern token_t yylex();
 extern int yylineno;
@@ -56,7 +57,10 @@ void scan_input(const char* filename) {
 	}
 	token = yylex();
 	while(token) {
-		printf("%s\n",token_string(token));
+		const char* result = token_string(token);
+		if(result[0] != '\0') {
+			printf("%s\n",fix_escape_chars(token_string(token)));
+		}
 		token = yylex();
 	}	
 }

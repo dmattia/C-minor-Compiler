@@ -2,6 +2,7 @@
 #include "error.h"
 #include <string.h>
 #include <stdlib.h>
+#include "scannerUtil.h"
 
 extern char* yytext;
 extern int yylineno;
@@ -12,6 +13,7 @@ const char *token_string(token_t t) {
 	char* string_literal = "STRING_LITERAL ";
 	char* without_quotes;
 	char* literal;
+	int i;
 
 	switch(t) {
 		case TOKEN_INTEGER:
@@ -21,25 +23,25 @@ const char *token_string(token_t t) {
 		case TOKEN_INTEGER_LITERAL:
 			return "INTEGER_LITERAL";
 		case TOKEN_PLUS:
-			return "+";
+			return "PLUS";
 		case TOKEN_MINUS:
-			return "-";
+			return "MINUS";
 		case TOKEN_INCREMENT:
-			return "++";
+			return "INCREMENT";
 		case TOKEN_DECREMENT:
-			return "--";
+			return "DECREMENT";
 		case TOKEN_DIVISION:
-			return "/";
+			return "SLASH";
 		case TOKEN_MODULUS:
-			return "%";
+			return "MODULO";
 		case TOKEN_NOT_EQUALS:
-			return "!=";
+			return "NOT_EQUALS";
 		case TOKEN_AND:
 			return "AND";
 		case TOKEN_OR:
 			return "OR";
 		case TOKEN_EXPONENT:
-			return "^";
+			return "CARAT";
 		case TOKEN_ARRAY:
 			return "ARRAY";
 		case TOKEN_BOOL:
@@ -67,21 +69,18 @@ const char *token_string(token_t t) {
 		case TOKEN_WHILE:
 			return "WHILE";
 		case TOKEN_COMMA:
-			return ",";
+			return "COMMA";
 		case TOKEN_LEFT_BRACKET:
 			return "[";
 		case TOKEN_RIGHT_BRACKET:
 			return "]";
 		case TOKEN_CHAR_LITERAL:
-			literal = (char*)malloc(strlen(char_literal) + 2);
-			without_quotes = (char*)malloc(2);
-			without_quotes[0] = yytext[1];
-			without_quotes[1] = '\0';
+			literal = (char*)malloc(strlen(char_literal) + strlen(yytext) - 1);
 			strcpy(literal,char_literal);
-			strcat(literal,without_quotes);
+			strcat(literal,remove_quotes(yytext));
 			return literal;
 		case TOKEN_COLON:
-			return ":";
+			return "COLON";
 		case TOKEN_LEFT_BRACE:
 			return "{";
 		case TOKEN_RIGHT_BRACE:
@@ -89,6 +88,12 @@ const char *token_string(token_t t) {
 		case TOKEN_SEMICOLON:
 			return "SEMICOLON";
 		case TOKEN_IDENTIFIER:
+			if(strlen(yytext) > 256) {
+				e.errorType = ERROR_BUFFER_OVERFLOW;
+				e.description = "Identifiers cannot be more than 256 chars long";
+				e.lineNum = yylineno;
+				throw_error(e);
+			}
 			return "IDENTIFIER";
 		case TOKEN_WHITESPACE:
 			return "";
@@ -96,13 +101,15 @@ const char *token_string(token_t t) {
 			return "COMMENT";
 		case TOKEN_STRING_LITERAL:
 			literal = (char*)malloc(strlen(string_literal) + strlen(yytext) - 1);
-			yytext++; //ignore the first quote
-			yytext[strlen(yytext)-1] = '\0'; //ignore closing quote
 			strcpy(literal,string_literal);
-			strcat(literal,yytext);
+			strcat(literal,remove_quotes(yytext));
+			if(strlen(fix_escape_chars(literal)) >= 256) {
+				e.errorType = ERROR_BUFFER_OVERFLOW;
+				e.description = "Strings cannot be more than 256 chars long";
+				e.lineNum = yylineno;
+				throw_error(e);
+			}
 			return literal;
-		case TOKEN_PREPROCESSOR:
-			return "PREPROCESSOR";
 		case TOKEN_LEFT_PAREN:
 			return "(";
 		case TOKEN_RIGHT_PAREN:

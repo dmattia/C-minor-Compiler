@@ -20,6 +20,8 @@ char* error_type(error e) {
 			return "Invalid Argument";
 		case ERROR_UNRECOGNIZED_TOKEN:
 			return "scan error";
+		case ERROR_BUFFER_OVERFLOW:
+			return "buffer overflow";
 		default:
 			return "Unknown error type";
 	}

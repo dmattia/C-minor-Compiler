@@ -11,6 +11,7 @@ DIGIT	         [0-9]
 LETTER	         [a-zA-Z]
 ID      	 [a-z][a-z0-9]*
 WHITESPACE	 [ \t\n\r] 
+ESCAPE           \\[abfnrtb\\\'\"\?]
 
 %%
 
@@ -53,15 +54,14 @@ while							return TOKEN_WHILE;
 \>=							return TOKEN_GE;
 =							return TOKEN_ASSIGNMENT;
 ==							return TOKEN_EQUALS;
-#.*     						return TOKEN_PREPROCESSOR;
 \/\/.*							return TOKEN_COMMENT;
 \/\*							return comment();	
 \[							return TOKEN_LEFT_BRACKET;
 \]							return TOKEN_RIGHT_BRACKET;
-{LETTER}({DIGIT}|{LETTER}|_)*          			return TOKEN_IDENTIFIER;
-[-+]?{DIGIT}+  						return TOKEN_INTEGER_LITERAL;
-\'.\'							return TOKEN_CHAR_LITERAL;
-\"[^\"]*\"						return TOKEN_STRING_LITERAL;
+({LETTER}|_)({DIGIT}|{LETTER}|_)*      			return TOKEN_IDENTIFIER;
+{DIGIT}+  						return TOKEN_INTEGER_LITERAL;
+\'({LETTER}|{DIGIT}|{ESCAPE}|[ ])\'			return TOKEN_CHAR_LITERAL;
+\"[^"\n]*\"						return TOKEN_STRING_LITERAL;
 {WHITESPACE}+                           		return TOKEN_WHITESPACE;
 .							return TOKEN_UNRECOGNIZED;
 

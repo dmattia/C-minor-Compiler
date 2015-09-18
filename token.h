@@ -42,7 +42,6 @@ enum token {
 	TOKEN_COMMENT,
 	TOKEN_STRING,
 	TOKEN_UNRECOGNIZED,
-	TOKEN_PREPROCESSOR,
 	TOKEN_LT,
 	TOKEN_GT,
 	TOKEN_LE,
@@ -56,6 +55,6 @@ enum token {
 
 typedef enum token token_t;
 
-const char *token_string(token_t);
+const char* token_string(token_t);
 
 #endif
