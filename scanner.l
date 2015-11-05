@@ -34,6 +34,7 @@ while							return TOKEN_WHILE;
 -							return TOKEN_MINUS;
 \++							return TOKEN_INCREMENT;
 --							return TOKEN_DECREMENT;
+!							return TOKEN_NOT;
 \/							return TOKEN_DIVISION;
 %							return TOKEN_MODULUS;
 !=							return TOKEN_NOT_EQUALS;

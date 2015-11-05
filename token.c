@@ -18,6 +18,8 @@ const char *token_string(token_t t) {
 	switch(t) {
 		case TOKEN_INTEGER:
 			return "INTEGER";
+		case TOKEN_NOT:
+			return "NOT";
 		case TOKEN_ASTERISK:
 			return "*";
 		case TOKEN_INTEGER_LITERAL:
