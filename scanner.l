@@ -1,9 +1,9 @@
 %option yylineno
 
 %{
-#include "token.h" 
+#include "parser.tab.h"
 
-token_t comment();
+void comment();
 void eatToEndOfLine();
 %}
 
@@ -55,21 +55,21 @@ while							return TOKEN_WHILE;
 \>=							return TOKEN_GE;
 =							return TOKEN_ASSIGNMENT;
 ==							return TOKEN_EQUALS;
-\/\/.*							return TOKEN_COMMENT;
-\/\*							return comment();	
+\/\/.*							/* comment: return nothing */
+\/\*							comment();	
 \[							return TOKEN_LEFT_BRACKET;
 \]							return TOKEN_RIGHT_BRACKET;
 ({LETTER}|_)({DIGIT}|{LETTER}|_)*      			return TOKEN_IDENTIFIER;
 {DIGIT}+  						return TOKEN_INTEGER_LITERAL;
 \'({LETTER}|{DIGIT}|{ESCAPE}|[ ])\'			return TOKEN_CHAR_LITERAL;
 \"[^"\n]*\"						return TOKEN_STRING_LITERAL;
-{WHITESPACE}+                           		return TOKEN_WHITESPACE;
+{WHITESPACE}+                           		/* return nothing */
 .							return TOKEN_UNRECOGNIZED;
 
 %%
 
 // eat up all characters until end of multiline comment or EOF
-token_t comment() {
+void comment() {
 	char lastChar, currentChar;
 
 	lastChar = input();
@@ -80,6 +80,4 @@ token_t comment() {
 		lastChar = currentChar;
 		currentChar = input();
 	}
-
-	return TOKEN_COMMENT;
 }

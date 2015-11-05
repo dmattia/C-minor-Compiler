@@ -1,4 +1,3 @@
-
 /*
 Declare token types at the top of the bison file,
 causing them to be automatically generated in parser.tab.h
@@ -119,6 +118,7 @@ param_list	: not_empty_param_list
 		;
 
 not_empty_param_list 	: param_list TOKEN_COMMA param
+			| param
 			;
 
 param		: ident TOKEN_COLON type
@@ -131,14 +131,21 @@ stmt_list	: stmt_list stmt
 		| stmt
 		;
 
-stmt		: decl
+stmt		: matched_stmt
+		| unmatched_stmt
+		;
+
+matched_stmt	: TOKEN_IF TOKEN_LEFT_PAREN expr TOKEN_RIGHT_PAREN matched_stmt TOKEN_ELSE matched_stmt
 		| expr TOKEN_SEMICOLON
 		| TOKEN_PRINT expr_list TOKEN_SEMICOLON /* allows PRINT; */
-		| TOKEN_FOR TOKEN_LEFT_PAREN opt_expr TOKEN_SEMICOLON opt_expr TOKEN_SEMICOLON opt_expr TOKEN_RIGHT_PAREN stmt
+		| TOKEN_FOR TOKEN_LEFT_PAREN opt_expr TOKEN_SEMICOLON opt_expr TOKEN_SEMICOLON opt_expr TOKEN_RIGHT_PAREN matched_stmt
 		| TOKEN_LEFT_BRACE stmt_list TOKEN_RIGHT_BRACE
-		| TOKEN_RETURN expr TOKEN_SEMICOLON
-		| TOKEN_IF TOKEN_LEFT_PAREN expr TOKEN_RIGHT_PAREN stmt TOKEN_ELSE stmt
-		/* need if then statements */
+		| TOKEN_RETURN opt_expr TOKEN_SEMICOLON
+		| decl
+		;
+
+unmatched_stmt	: TOKEN_IF TOKEN_LEFT_PAREN expr TOKEN_RIGHT_PAREN stmt
+		| TOKEN_IF TOKEN_LEFT_PAREN expr TOKEN_RIGHT_PAREN matched_stmt TOKEN_ELSE unmatched_stmt
 		;
 
 expr_list	: expr_list TOKEN_COMMA expr
@@ -210,6 +217,8 @@ primary_expr	: TOKEN_TRUE
 		| TOKEN_INTEGER_LITERAL
 		| TOKEN_CHAR_LITERAL
 		| TOKEN_STRING_LITERAL
+		| ident
+		| ident TOKEN_LEFT_BRACKET opt_expr TOKEN_RIGHT_BRACKET
 		;
 
 %%

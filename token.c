@@ -97,10 +97,6 @@ const char *token_string(token_t t) {
 				throw_error(e);
 			}
 			return "IDENTIFIER";
-		case TOKEN_WHITESPACE:
-			return "";
-		case TOKEN_COMMENT:
-			return "COMMENT";
 		case TOKEN_STRING_LITERAL:
 			literal = (char*)malloc(strlen(string_literal) + strlen(yytext) - 1);
 			strcpy(literal,string_literal);
@@ -139,6 +135,6 @@ const char *token_string(token_t t) {
 			e.lineNum = yylineno;
 			throw_error(e);
 		default:
-			return "default";
+			return "";
 	}
 }

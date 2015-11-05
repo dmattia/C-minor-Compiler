@@ -557,9 +557,9 @@ int yy_flex_debug = 0;
 char *yytext;
 #line 1 "scanner.l"
 #line 4 "scanner.l"
-#include "token.h" 
+#include "parser.tab.h"
 
-token_t comment();
+void comment();
 void eatToEndOfLine();
 #line 565 "lex.yy.c"
 
@@ -1042,12 +1042,12 @@ return TOKEN_EQUALS;
 case 41:
 YY_RULE_SETUP
 #line 58 "scanner.l"
-return TOKEN_COMMENT;
+/* comment: return nothing */
 	YY_BREAK
 case 42:
 YY_RULE_SETUP
 #line 59 "scanner.l"
-return comment();	
+comment();	
 	YY_BREAK
 case 43:
 YY_RULE_SETUP
@@ -1083,7 +1083,7 @@ case 49:
 /* rule 49 can match eol */
 YY_RULE_SETUP
 #line 66 "scanner.l"
-return TOKEN_WHITESPACE;
+/* return nothing */
 	YY_BREAK
 case 50:
 YY_RULE_SETUP
@@ -2109,7 +2109,7 @@ void yyfree (void * ptr )
 
 
 // eat up all characters until end of multiline comment or EOF
-token_t comment() {
+void comment() {
 	char lastChar, currentChar;
 
 	lastChar = input();
@@ -2120,7 +2120,5 @@ token_t comment() {
 		lastChar = currentChar;
 		currentChar = input();
 	}
-
-	return TOKEN_COMMENT;
 }
 
