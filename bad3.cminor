@@ -1,0 +1,3 @@
+func: function void (x: integer; y: boolean) = {
+	return;	
+}

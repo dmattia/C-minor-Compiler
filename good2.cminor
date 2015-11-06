@@ -1,0 +1,3 @@
+func: function void () = {
+	for(;;) print 5;
+}

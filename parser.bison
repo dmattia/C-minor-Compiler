@@ -67,10 +67,10 @@ for use by scanner.c.
 
 %type <decl> program decl_list decl
 %type <stmt> stmt stmt_list matched_stmt unmatched_stmt
-%type <expr> expr expr_list opt_expr assignment_expr or_expr and_expr comp_expr add_expr mult_expr exponent_expr flip_expr prefix_expr postfix_expr group_expr primary_expr ident
+%type <expr> expr expr_list opt_expr assignment_expr or_expr and_expr comp_expr add_expr mult_expr exponent_expr flip_expr prefix_expr postfix_expr group_expr primary_expr array_expr
 %type <param_list> param_list not_empty_param_list param
 %type <type> type
-%type <s> ident_string
+%type <s> ident
 
 %{
 
@@ -117,28 +117,30 @@ decl_list	: decl decl_list
 			{ $$ = 0; }
 		;
 
-decl		: ident_string TOKEN_COLON type TOKEN_ASSIGNMENT expr TOKEN_SEMICOLON
-			{ $$ = decl_create( $1, $3, $5, 0, 0); }
-		| ident_string TOKEN_COLON type TOKEN_SEMICOLON
-			{ $$ = decl_create( $1, $3, 0, 0, 0); }
-		| ident_string TOKEN_COLON type TOKEN_ASSIGNMENT TOKEN_LEFT_BRACE stmt_list TOKEN_RIGHT_BRACE
-			{ $$ = decl_create( $1, $3, 0, $6, 0); }
+decl		: ident TOKEN_COLON type TOKEN_ASSIGNMENT expr TOKEN_SEMICOLON
+			{ $$ = decl_create( $1, $3, $5, 0, 0, 0); }
+		| ident TOKEN_COLON type TOKEN_SEMICOLON
+			{ $$ = decl_create( $1, $3, 0, 0, 0, 0); }
+		| ident TOKEN_COLON type TOKEN_ASSIGNMENT TOKEN_LEFT_BRACE stmt_list TOKEN_RIGHT_BRACE
+			{ $$ = decl_create( $1, $3, 0, $6, 0, 0); }
+		| ident TOKEN_COLON type TOKEN_ASSIGNMENT TOKEN_LEFT_BRACE TOKEN_RIGHT_BRACE
+			{ $$ = decl_create( $1, $3, 0, 0, 0, 1); }
 		;
 
 type		: TOKEN_STRING
-			{ $$ = type_create(TYPE_STRING, 0, 0); }
+			{ $$ = type_create(TYPE_STRING, 0, 0, 0); }
 		| TOKEN_INTEGER
-			{ $$ = type_create(TYPE_INTEGER, 0, 0); }
+			{ $$ = type_create(TYPE_INTEGER, 0, 0, 0); }
 		| TOKEN_CHAR
-			{ $$ = type_create(TYPE_CHARACTER, 0, 0); }
+			{ $$ = type_create(TYPE_CHARACTER, 0, 0, 0); }
 		| TOKEN_BOOL
-			{ $$ = type_create(TYPE_BOOLEAN, 0, 0); }
+			{ $$ = type_create(TYPE_BOOLEAN, 0, 0, 0); }
 		| TOKEN_ARRAY TOKEN_LEFT_BRACKET opt_expr TOKEN_RIGHT_BRACKET type
-			{ $$ = type_create(TYPE_ARRAY, 0, $5); }
+			{ $$ = type_create(TYPE_ARRAY, $3, 0, $5); }
 		| TOKEN_VOID
-			{ $$ = type_create(TYPE_VOID, 0, 0); }
+			{ $$ = type_create(TYPE_VOID, 0, 0, 0); }
 		| TOKEN_FUNCTION type TOKEN_LEFT_PAREN param_list TOKEN_RIGHT_PAREN
-			{ $$ = type_create(TYPE_FUNCTION, $4, $2); }
+			{ $$ = type_create(TYPE_FUNCTION, 0, $4, $2); }
 		;
 
 opt_expr	: expr
@@ -159,23 +161,15 @@ not_empty_param_list 	: param TOKEN_COMMA param_list
 				{ $$ = $1; }
 			;
 
-param		: ident_string TOKEN_COLON type
+param		: ident TOKEN_COLON type
 			{ $$ = param_list_create($1, $3, 0); }
 		;
 
-ident_string	: TOKEN_IDENTIFIER
+ident		: TOKEN_IDENTIFIER
 			{ char *text;
 			  text = (char *)malloc(sizeof(yytext));
 			  strcpy(text, yytext);
 			  $$ = text;
-			}
-		;
-
-ident		: TOKEN_IDENTIFIER
-			{ char *name;
-			  name = (char *)malloc(sizeof(yytext));
-			  strcpy(name, yytext);
-			  $$ = expr_create_name(name);
 			}
 		;
 
@@ -195,8 +189,10 @@ matched_stmt	: TOKEN_IF TOKEN_LEFT_PAREN expr TOKEN_RIGHT_PAREN matched_stmt TOK
 			{ $$ = stmt_create(STMT_IF_ELSE, 0, 0, $3, 0, $5, $7); }
 		| expr TOKEN_SEMICOLON
 			{ $$ = stmt_create(STMT_EXPR, 0, 0, $1, 0, 0, 0); }
-		| TOKEN_PRINT expr_list TOKEN_SEMICOLON /* allows PRINT; */
+		| TOKEN_PRINT expr_list TOKEN_SEMICOLON
 			{ $$ = stmt_create(STMT_PRINT, 0, 0, $2, 0, 0, 0); }
+		| TOKEN_PRINT TOKEN_SEMICOLON
+			{ $$ = stmt_create(STMT_PRINT, 0, 0, 0, 0, 0, 0); }
 		| TOKEN_FOR TOKEN_LEFT_PAREN opt_expr TOKEN_SEMICOLON opt_expr TOKEN_SEMICOLON opt_expr TOKEN_RIGHT_PAREN matched_stmt
 			{ $$ = stmt_create(STMT_FOR, 0, $3, $5, $7, $9, 0); }
 		| TOKEN_LEFT_BRACE stmt_list TOKEN_RIGHT_BRACE
@@ -224,9 +220,15 @@ expr		: assignment_expr
 		;
 
 assignment_expr	: ident TOKEN_ASSIGNMENT assignment_expr
+			{ $$ = expr_create(EXPR_ASSIGNMENT, expr_create_name($1), $3); }
+		| array_expr TOKEN_ASSIGNMENT assignment_expr
 			{ $$ = expr_create(EXPR_ASSIGNMENT, $1, $3); }
 		| or_expr
 			{ $$ = $1; }
+		;
+
+array_expr	: ident TOKEN_LEFT_BRACKET expr TOKEN_RIGHT_BRACKET
+			{ $$ = expr_create(EXPR_ARRAY, expr_create_name($1), $3); }
 		;
 
 or_expr		: or_expr TOKEN_OR and_expr
@@ -310,7 +312,9 @@ group_expr	: TOKEN_LEFT_PAREN expr TOKEN_RIGHT_PAREN
 		| TOKEN_LEFT_BRACKET expr TOKEN_RIGHT_BRACKET
 			{ $$ = $2; }
 		| ident TOKEN_LEFT_PAREN expr_list TOKEN_RIGHT_PAREN
-			{ $$ = expr_create(EXPR_FUNCTION, $1, $3); }
+			{ $$ = expr_create(EXPR_FUNCTION, expr_create_name($1), $3); }
+		| ident TOKEN_LEFT_PAREN TOKEN_RIGHT_PAREN
+			{ $$ = expr_create(EXPR_FUNCTION, expr_create_name($1), 0); }
 		| primary_expr
 			{ $$ = $1; }
 		;
@@ -324,11 +328,15 @@ primary_expr	: TOKEN_TRUE
 		| TOKEN_CHAR_LITERAL
 			{ $$ = expr_create_character_literal(yytext[1]); }
 		| TOKEN_STRING_LITERAL
-			{ $$ = expr_create_string_literal(yytext); }
+			{ char *text;
+			  text = (char *)malloc(sizeof(yytext));
+			  strcpy(text, yytext);
+			  $$ = expr_create_string_literal(text);
+			}
 		| ident
-			{ $$ = $1; }
+			{ $$ = expr_create_name($1); }
 		| ident TOKEN_LEFT_BRACKET opt_expr TOKEN_RIGHT_BRACKET
-			{ $$ = expr_create_string_literal("ARRAY"); }
+			{ $$ = expr_create(EXPR_ARRAY, expr_create_name($1), $3); }
 		;
 
 %%

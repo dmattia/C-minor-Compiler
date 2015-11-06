@@ -13,9 +13,10 @@ struct decl {
 	struct stmt *code;
 	struct symbol *symbol;
 	struct decl *next;
+	int isEmptyFunction;
 };
 
-struct decl * decl_create( char *name, struct type *t, struct expr *v, struct stmt *c, struct decl *next );
+struct decl * decl_create( char *name, struct type *t, struct expr *v, struct stmt *c, struct decl *next, int isEmptyFunction );
 void decl_print( struct decl *d, int indent );
 
 #endif

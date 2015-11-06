@@ -25,7 +25,8 @@ void stmt_print( struct stmt * s, int indent ) {
 		case STMT_EXPR:
 			for(; i > 0; --i) printf("\t");
 			expr_print(s->expr);
-			printf(";\n");
+			printf(";");
+			if(s->next) printf("\n");
 			break;
 		case STMT_IF_ELSE:
 			for(; i > 0; --i) printf("\t");
@@ -40,6 +41,15 @@ void stmt_print( struct stmt * s, int indent ) {
 			break;
 		case STMT_FOR:
 			for(; i > 0; --i) printf("\t");
+			printf("for (");
+			expr_print(s->init_expr);
+			printf("; ");
+			expr_print(s->expr);
+			printf("; ");
+			expr_print(s->next_expr);
+			printf(") ");
+			stmt_print(s->body, indent);
+			printf("\n");
 			break;
 		case STMT_WHILE:
 			printf("NO WHILE LOOPS MAN.");

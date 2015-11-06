@@ -1,7 +1,7 @@
 #include "decl.h"
 #include "stdlib.h"
 
-struct decl * decl_create( char *name, struct type *t, struct expr *v, struct stmt *c, struct decl *next ) {
+struct decl * decl_create( char *name, struct type *t, struct expr *v, struct stmt *c, struct decl *next, int isEmptyFunction ) {
 	struct decl * d;
 	d = (struct decl *)malloc(sizeof(*d));
 	d->name = name;
@@ -9,6 +9,7 @@ struct decl * decl_create( char *name, struct type *t, struct expr *v, struct st
 	d->value = v;
 	d->code = c;
 	d->next = next;
+	d->isEmptyFunction = isEmptyFunction;
 	return d;
 }
 
@@ -28,6 +29,8 @@ void decl_print( struct decl *d, int indent ) {
 		printf(" = ");
 		expr_print(d->value);
 		printf(";\n");
+	} else if(d->isEmptyFunction) {
+		printf(" = { }\n");
 	} else {
 		printf(";\n");
 	}

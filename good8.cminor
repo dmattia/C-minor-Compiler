@@ -1,0 +1,5 @@
+otherFunc: function integer (x: integer);
+
+func: function integer () = {
+	return 0;
+}

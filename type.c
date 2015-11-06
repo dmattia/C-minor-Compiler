@@ -1,10 +1,11 @@
 #include "type.h"
 #include <stdlib.h>
 
-struct type * type_create( type_kind_t kind, struct param_list *params, struct type *subtype ) {
+struct type * type_create( type_kind_t kind, struct expr *e, struct param_list *params, struct type *subtype ) {
 	struct type *t;
 	t = (struct type*)malloc(sizeof(*t));
 	t->kind = kind;
+	t->expr = e;
 	t->params = params;
 	t->subtype = subtype;
 	return t;
@@ -25,7 +26,9 @@ void type_print( struct type *t) {
 			printf("string");
 			break;
 		case TYPE_ARRAY:
-			printf("array [] ");
+			printf("array [");
+			expr_print(t->expr);
+			printf("] ");
 			type_print(t->subtype);
 			break;
 		case TYPE_FUNCTION:

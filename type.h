@@ -2,6 +2,7 @@
 #define TYPE_H
 
 #include "param_list.h"
+#include "expr.h"
 
 typedef enum {
 	TYPE_BOOLEAN,
@@ -17,9 +18,10 @@ struct type {
 	type_kind_t kind;
 	struct param_list *params;
 	struct type *subtype;
+	struct expr *expr;
 };
 
-struct type * type_create( type_kind_t kind, struct param_list *params, struct type *subtype );
+struct type * type_create( type_kind_t kind, struct expr *e, struct param_list *params, struct type *subtype );
 void          type_print( struct type *t );
 
 #endif

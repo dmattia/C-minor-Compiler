@@ -57,6 +57,7 @@ struct expr * expr_create_string_literal( const char *str ) {
 
 void expr_print( struct expr *e ) {
 	if(!e) return;
+	if(e->kind != EXPR_LIST && e->kind != EXPR_FUNCTION && e->kind != EXPR_ARRAY && e->kind != EXPR_NAME && e->kind != EXPR_ASSIGNMENT) printf("(");
 	expr_print(e->left);
 	switch(e->kind) {
 		case EXPR_LIST:
@@ -134,7 +135,7 @@ void expr_print( struct expr *e ) {
 			printf("%d", e->literal_value);
 			break;
 		case EXPR_CHAR:
-			printf("%c", e->literal_value);
+			printf("'%c'", e->literal_value);
 			break;
 		case EXPR_STRING:
 			printf("%s", e->string_literal);
@@ -142,7 +143,12 @@ void expr_print( struct expr *e ) {
 		case EXPR_NAME:
 			printf("%s", e->name);
 			break;
+		case EXPR_ARRAY:
+			printf("[");
+			break;
 	}
 	expr_print(e->right);
+	if(e->kind != EXPR_LIST && e->kind != EXPR_FUNCTION && e->kind != EXPR_ARRAY && e->kind != EXPR_NAME && e->kind != EXPR_ASSIGNMENT) printf(")");
 	if(e->kind == EXPR_FUNCTION) printf(")");
+	if(e->kind == EXPR_ARRAY) printf("]");
 }
