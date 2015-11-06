@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include "error.h"
 #include "token.h"
+#include "decl.h"
 #include "scannerUtil.h"
 
 extern token_t yylex();
@@ -13,7 +14,7 @@ extern FILE* yyin;
 /* Clunky: Declare the parse function generated from parser.bison */
 extern int yyparse();
 /* Clunky: Declare the result of the parser from parser.bison */
-//extern struct expr * parser_result;
+extern struct decl *parser_result;
 
 void scan_input(const char*);
 void parse_input(const char*);
@@ -96,6 +97,8 @@ void parse_input(const char* filename) {
 		e.lineNum = -1; //as this is not in the actual file yet
 		throw_error(e);
 	}
-	printf("yyparse result: %d\n", yyparse());
+	if(!yyparse()) {
+		decl_print(parser_result, 0);
+	}
 	fclose(yyin);
 }

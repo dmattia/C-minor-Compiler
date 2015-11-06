@@ -13,19 +13,23 @@ struct decl * decl_create( char *name, struct type *t, struct expr *v, struct st
 }
 
 void decl_print( struct decl *d, int indent ) {
+	int i = indent;
 	if(!d) return;
-	for(; indent>0; --indent) {
+	for(; i>0; --i) {
 		printf("\t");
 	}
-	pretty_print(d);
-	type_print(d->type);
-	expr_print(d->value);
-	stmt_print(d->code, indent+1);
-	decl_print(d->next, indent);
-	printf("\n");
-}
-
-void pretty_print( struct decl *d ) {
-	if(!d) return;
 	printf("%s : ", d->name);
+	type_print(d->type);
+	if(d->code) {
+		printf(" = {\n");
+		stmt_print(d->code, indent+1);
+		printf("\n}\n");
+	} else if (d->value) {
+		printf(" = ");
+		expr_print(d->value);
+		printf(";\n");
+	} else {
+		printf(";\n");
+	}
+	decl_print(d->next, indent);
 }
