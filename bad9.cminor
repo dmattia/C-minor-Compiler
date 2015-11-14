@@ -1,5 +1,0 @@
-func: function void () = {
-	for(;x: integer;;x++) {
-		print 5;
-	}
-}

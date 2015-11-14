@@ -5,6 +5,8 @@
 *.o
 *.out
 
+*.cminor
+
 parser.output
 parser.tab.c
 parser.tab.h

@@ -1,5 +1,0 @@
-func: function void () = {
-	if( a + b = 3 ) {
-		print 5;
-	}
-}

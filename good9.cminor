@@ -1,4 +1,0 @@
-func: function void () = {
-	print;
-	return;
-}

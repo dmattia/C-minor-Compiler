@@ -1,3 +1,0 @@
-func: function void () = {
-	var: integer = 3 * (4+6);
-}
