@@ -11,4 +11,6 @@ parser.output
 parser.tab.c
 parser.tab.h
 
+lex.yy.c
+
 *.swp
