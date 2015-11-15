@@ -329,7 +329,7 @@ primary_expr	: TOKEN_TRUE
 			{ $$ = expr_create_character_literal(yytext[1]); }
 		| TOKEN_STRING_LITERAL
 			{ char *text;
-			  text = (char *)malloc(sizeof(yytext));
+			  text = (char *)malloc(515); // max length string plus quotations plus null char
 			  strcpy(text, yytext);
 			  $$ = expr_create_string_literal(text);
 			}

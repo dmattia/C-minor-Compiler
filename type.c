@@ -34,7 +34,7 @@ void type_print( struct type *t) {
 		case TYPE_FUNCTION:
 			printf("function ");
 			type_print(t->subtype);
-			printf("(");
+			printf(" (");
 			param_list_print(t->params);
 			printf(")");
 			break;

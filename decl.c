@@ -1,5 +1,7 @@
 #include "decl.h"
 #include "stdlib.h"
+#include "error.h"
+#include "scope.h"
 
 struct decl * decl_create( char *name, struct type *t, struct expr *v, struct stmt *c, struct decl *next, int isEmptyFunction ) {
 	struct decl * d;
@@ -35,4 +37,26 @@ void decl_print( struct decl *d, int indent ) {
 		printf(";\n");
 	}
 	decl_print(d->next, indent);
+}
+
+void decl_resolve(struct decl *d) {
+	if(!d) return;
+	struct symbol *s = symbol_create(SYMBOL_LOCAL, d->type, d->name);
+	if(scope_lookup_local(d->name)) {
+		// variable already exists in this scope
+		error e;
+		e.errorType = ERROR_MULTIPLE_DECLARATION;
+		sprintf(e.description, "%s cannot be declared twice in the same scope", d->name);
+		e.lineNum = -1;
+		throw_error(e);
+	}
+	scope_bind(s->name, s);
+	// resolve expr
+	if(d->code) {
+		scope_enter();
+		param_list_resolve(d->type->params);
+		// resolve code
+		scope_leave();
+	}
+	decl_resolve(d->next);
 }
