@@ -1,5 +1,8 @@
 #include "expr.h"
 #include "stdlib.h"
+#include "scope.h"
+#include "symbol.h"
+#include "error.h"
 
 struct expr * expr_create( expr_t kind, struct expr *left, struct expr *right ) {
 	struct expr *e;
@@ -151,4 +154,23 @@ void expr_print( struct expr *e ) {
 	if(e->kind != EXPR_LIST && e->kind != EXPR_FUNCTION && e->kind != EXPR_ARRAY && e->kind != EXPR_NAME && e->kind != EXPR_ASSIGNMENT) printf(")");
 	if(e->kind == EXPR_FUNCTION) printf(")");
 	if(e->kind == EXPR_ARRAY) printf("]");
+}
+
+void expr_resolve (struct expr *e) {
+	if(!e) return;
+	expr_resolve(e->left);
+	expr_resolve(e->right);
+	if(e->kind == EXPR_NAME) {
+		struct symbol *s = scope_lookup(e->name);
+		if(s) {
+			e->symbol = s;
+			printf("Found use of symbol %s\n", e->name);
+		} else {
+			error err;
+			err.errorType = ERROR_UNFOUND_IDENTIFIER;
+			sprintf(err.description, "%s has not been declared", e->name);
+			err.lineNum = -1;
+			throw_error(err);
+		}
+	}
 }

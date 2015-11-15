@@ -36,7 +36,7 @@ int main(int argc, char* argv[]) {
 		if (strcmp(argv[i],"-resolve")==0) resolve = 1;
 	}
 
-	if (argc <= 2) {
+	if ((scan || parse || resolve) && argc <= 2) {
 		error e;
 		e.errorType = ERROR_INVALID_ARGUMENT;
 		e.description = "Must include a file name";

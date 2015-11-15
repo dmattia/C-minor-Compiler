@@ -51,11 +51,11 @@ void decl_resolve(struct decl *d) {
 		throw_error(e);
 	}
 	scope_bind(s->name, s);
-	// resolve expr
+	expr_resolve(d->value);
 	if(d->code) {
 		scope_enter();
 		param_list_resolve(d->type->params);
-		// resolve code
+		stmt_resolve(d->code);
 		scope_leave();
 	}
 	decl_resolve(d->next);

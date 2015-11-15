@@ -1,5 +1,6 @@
-#include "stmt.h"
 #include <stdlib.h>
+#include "stmt.h"
+#include "scope.h"
 
 struct stmt * stmt_create( stmt_kind_t kind, struct decl *d, struct expr *init_expr, struct expr *e, struct expr *next_expr, struct stmt *body, struct stmt *else_body ) {
 	struct stmt *s;
@@ -75,4 +76,42 @@ void stmt_print( struct stmt * s, int indent ) {
 			break;
 	}
 	stmt_print(s->next, indent);
+}
+
+void stmt_resolve(struct stmt *s) {
+	if(!s) return;
+	switch(s->kind) {
+		case STMT_DECL:
+			decl_resolve(s->decl);
+			break;
+		case STMT_EXPR:
+			expr_resolve(s->expr);
+			break;
+		case STMT_IF_ELSE:
+			expr_resolve(s->expr);
+			stmt_resolve(s->body);
+			stmt_resolve(s->else_body);
+			break;
+		case STMT_FOR:
+			expr_resolve(s->init_expr);
+			expr_resolve(s->expr);
+			expr_resolve(s->next_expr);
+			stmt_resolve(s->body);
+			break;
+		case STMT_WHILE:
+			// No while loops allowed
+			break;
+		case STMT_PRINT:
+			expr_resolve(s->expr);
+			break;
+		case STMT_RETURN:
+			expr_resolve(s->expr);
+			break;
+		case STMT_BLOCK:
+			scope_enter();
+			stmt_resolve(s->body);
+			scope_leave();
+			break;
+	}
+	stmt_resolve(s->next);
 }
