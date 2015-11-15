@@ -2,6 +2,9 @@
 #include "param_list.h"
 #include "scope.h"
 #include "error.h"
+#include "list.h"
+
+extern struct node *head;
 
 struct param_list * param_list_create( char *name, struct type *type, struct param_list *next) {
 	struct param_list *p;
@@ -34,5 +37,6 @@ void param_list_resolve(struct param_list *p) {
 		throw_error(e);
 	}
 	scope_bind(s->name, s);
+	head->params = head->params + 1;
 	param_list_resolve(p->next);
 }

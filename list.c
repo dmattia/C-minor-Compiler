@@ -5,6 +5,7 @@ void push_front(struct hash_table *h) {
 	struct node *old_head = head;
 	head = (struct node*)malloc(sizeof(struct node));
 	head->hash_table = h;
+	head->params = 0;
 	head->next = old_head;
 }
 

@@ -6,6 +6,7 @@
 struct node {
 	struct hash_table *hash_table;
 	struct node *next;	
+	int params;
 };
 
 struct node *head;

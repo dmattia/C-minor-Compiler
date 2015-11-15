@@ -41,7 +41,12 @@ void decl_print( struct decl *d, int indent ) {
 
 void decl_resolve(struct decl *d) {
 	if(!d) return;
-	struct symbol *s = symbol_create(SYMBOL_LOCAL, d->type, d->name);
+	struct symbol *s;
+	if(scope_level() == 1) {
+		s = symbol_create(SYMBOL_GLOBAL, d->type, d->name);
+	} else {
+		s = symbol_create(SYMBOL_LOCAL, d->type, d->name);
+	}
 	if(scope_lookup_local(d->name)) {
 		// variable already exists in this scope
 		error e;
