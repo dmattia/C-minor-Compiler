@@ -43,3 +43,12 @@ void type_print( struct type *t) {
 			break;
 	}
 }
+
+struct type * type_copy( struct type *t ) {
+	struct type *new = type_create(t->kind, t->expr, t->params, t->subtype);
+	return new;
+}
+
+int type_equal(struct type *t1, struct type *t2) {
+	return t1->kind == t2->kind;
+}

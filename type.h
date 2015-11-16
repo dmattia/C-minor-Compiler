@@ -22,6 +22,8 @@ struct type {
 };
 
 struct type * type_create( type_kind_t kind, struct expr *e, struct param_list *params, struct type *subtype );
-void          type_print( struct type *t );
+int type_equal( struct type *t1, struct type *t2 );
+struct type * type_copy( struct type *t );
+void type_print( struct type *t );
 
 #endif

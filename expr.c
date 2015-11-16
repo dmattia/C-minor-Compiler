@@ -13,7 +13,7 @@ struct expr * expr_create( expr_t kind, struct expr *left, struct expr *right ) 
 	return e;
 }
 
-struct expr * expr_create_name( const char *n) {
+struct expr * expr_create_name( const char *n ) {
 	struct expr *e;
 	e = (struct expr*)malloc(sizeof(*e));
 	e->kind = EXPR_NAME;
@@ -172,5 +172,159 @@ void expr_resolve (struct expr *e) {
 			err.lineNum = -1;
 			throw_error(err);
 		}
+	}
+}
+
+struct type *expr_typecheck(struct expr *e) {
+	if(!e) return type_create(TYPE_VOID, 0, 0, 0);
+	struct type *left;
+	struct type *right;
+	switch(e->kind) {
+		case EXPR_LIST:
+			return type_create(TYPE_STRING, 0, 0, 0); // Could be any non void type
+			break;
+		case EXPR_ASSIGNMENT:
+			left = expr_typecheck(e->left);
+			right = expr_typecheck(e->right);
+			if(type_equal(left, right) && left->kind != TYPE_FUNCTION) {
+				return type_copy(left);
+			} else {
+				printf("Cannot assign ");
+				type_print(right);
+				printf(" to ");
+				type_print(left);
+				printf("\n");
+				exit(1);
+			}
+			break;
+		case EXPR_NOT_EQUALS:
+		case EXPR_EQUALS:
+			left = expr_typecheck(e->left);
+			right = expr_typecheck(e->right);
+			if(type_equal(left, right) && left->kind != TYPE_FUNCTION && left->kind != TYPE_ARRAY) {
+				return type_copy(left);
+			} else {
+				printf("Cannot perform logical equals operation on ");
+				type_print(left);
+				printf(" and ");
+				type_print(right);
+				printf("\n");
+				exit(1);
+			}
+			break;
+		case EXPR_LT:
+		case EXPR_GT:
+		case EXPR_LE:
+		case EXPR_GE:
+		case EXPR_ADD:
+		case EXPR_MINUS:
+		case EXPR_TIMES:
+		case EXPR_DIVIDES:
+		case EXPR_MOD:
+		case EXPR_POWER:
+			left = expr_typecheck(e->left);
+			right = expr_typecheck(e->right);
+			if(left->kind == TYPE_INTEGER && right->kind == TYPE_INTEGER) {
+				return type_create(TYPE_INTEGER, 0, 0, 0);
+			} else {
+				printf("Cannot perform arithmetic operations on ");
+				type_print(left);
+				printf(" and ");
+				type_print(right);
+				printf("\n");
+				exit(1);
+			}
+			break;
+		case EXPR_NEGATIVE:
+			right = expr_typecheck(e->right);
+			if(right->kind == TYPE_INTEGER) {
+				return type_create(TYPE_INTEGER, 0, 0, 0);
+			} else {
+				printf("Cannot take the negative of ");
+				type_print(right);	
+				printf("\n");
+				exit(1);
+			}
+			break;
+		case EXPR_OR:
+		case EXPR_AND:
+			left = expr_typecheck(e->left);
+			right = expr_typecheck(e->right);
+			if(left->kind == TYPE_BOOLEAN && right->kind == TYPE_BOOLEAN) {
+				return type_create(TYPE_BOOLEAN, 0, 0, 0);
+			} else {
+				printf("Cannot perform logical operations on ");
+				type_print(left);
+				printf(" and ");
+				type_print(right);
+				printf("\n");
+				exit(1);
+			}
+			break;
+		case EXPR_NOT:
+			right = expr_typecheck(e->right);
+			if(right->kind == TYPE_BOOLEAN) {
+				return type_create(TYPE_BOOLEAN, 0, 0, 0);
+			} else {
+				printf("Cannot perform a logical not on ");
+				type_print(right);	
+				printf("\n");
+				exit(1);
+			}
+			break;
+		case EXPR_PRE_INCREMENT:
+		case EXPR_PRE_DECREMENT:
+			right = expr_typecheck(e->right);
+			if(right->kind == TYPE_INTEGER) {
+				return type_create(TYPE_INTEGER, 0, 0, 0);
+			} else {
+				printf("Cannot perform integer operations on ");
+				type_print(right);	
+				printf("\n");
+				exit(1);
+			}
+			break;
+		case EXPR_POST_INCREMENT:
+		case EXPR_POST_DECREMENT:
+			left = expr_typecheck(e->left);
+			if(left->kind == TYPE_INTEGER) {
+				return type_create(TYPE_INTEGER, 0, 0, 0);
+			} else {
+				printf("Cannot perform integer operations on ");
+				type_print(left);	
+				printf("\n");
+				exit(1);
+			}
+			break;
+		case EXPR_FUNCTION:
+			return scope_lookup(e->name)->type;
+			break;
+		case EXPR_BOOLEAN:
+			return type_create(TYPE_BOOLEAN, 0, 0, 0);
+			break;
+		case EXPR_INT:
+			return type_create(TYPE_INTEGER, 0, 0, 0);
+			break;
+		case EXPR_CHAR:
+			return type_create(TYPE_CHARACTER, 0, 0, 0);
+			break;
+		case EXPR_STRING:
+			return type_create(TYPE_STRING, 0, 0, 0);
+			break;
+		case EXPR_NAME:
+			return e->symbol->type;
+			break;
+		case EXPR_ARRAY:
+			left = expr_typecheck(e->left);
+			right = expr_typecheck(e->right);
+			if(right->kind == TYPE_INTEGER) {
+				return type_copy(left);
+			} else {
+				printf("Can not use ");
+				type_print(right);
+				printf(" as an array index. Must use an integer");
+				exit(1);
+			}
+			break;
 	}
 }
