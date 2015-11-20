@@ -4,6 +4,8 @@
 #include "error.h"
 #include "scope.h"
 
+extern int type_check_errors;
+
 struct decl * decl_create( char *name, struct type *t, struct expr *v, struct stmt *c, struct decl *next, int isEmptyFunction ) {
 	struct decl * d;
 	d = (struct decl *)malloc(sizeof(*d));
@@ -87,10 +89,10 @@ struct type *decl_typecheck(struct decl *d) {
 		} else {
 			printf("Type Mismatch: %s expects a ", d->name);
 			type_print(d->type);
-			printf("But was given a ");
+			printf(" but was given a ");
 			type_print(expr_result);
 			printf("\n");
-			exit(1);
+			type_check_errors++;
 		}
 	} else if (d->code) {
 		// decl is a non-empty function
@@ -104,7 +106,7 @@ struct type *decl_typecheck(struct decl *d) {
 				printf(" but a ");
 				type_print(function_return);
 				printf(" was returned\n");
-				exit(1);
+				type_check_errors++;
 			}
 		} else {
 			if(d->type->subtype->kind == TYPE_VOID) {
@@ -113,7 +115,7 @@ struct type *decl_typecheck(struct decl *d) {
 				printf("Type Error: Function %s expects a ", d->name);
 				type_print(d->type->subtype);
 				printf(" but no return value was found\n");
-				exit(1);
+				type_check_errors++;
 			}
 		}
 	} else if (d->isEmptyFunction) {
@@ -122,7 +124,7 @@ struct type *decl_typecheck(struct decl *d) {
 			result = type_create(TYPE_VOID, 0, 0, 0);
 		} else {
 			printf("Type Error: Non void function %s cannot be empty\n", d->name);
-			exit(1);
+			type_check_errors++;
 		}
 	} else {
 		// decl is of type:
@@ -131,11 +133,11 @@ struct type *decl_typecheck(struct decl *d) {
 			if (d->type->expr) {
 				if(d->type->expr->kind != EXPR_INT) {
 					printf("Type Error: Declaration of array %s must have a fixed size\n", d->name);
-					exit(1);
+					type_check_errors++;
 				}
 			} else {
 				printf("Declaration of array %s must have a fixed size\n", d->name);
-				exit(1);
+				type_check_errors++;
 			}
 		}
 		result = type_create(d->type->kind, 0, 0, 0);

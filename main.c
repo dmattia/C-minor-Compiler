@@ -17,6 +17,7 @@ extern struct node *head;
 extern int yyparse();
 /* Clunky: Declare the result of the parser from parser.bison */
 extern struct decl *parser_result;
+int type_check_errors;
 
 void scan_input(const char*);
 void parse_input(const char*);
@@ -100,18 +101,24 @@ void resolve_input(const char* filename) {
 }
 
 void typecheck_input(const char* filename) {
+	type_check_errors = 0;
 	yyin = safe_open(filename);
 	if(!yyparse()) {
+		printf("NAME RESOLUTION:\n\n");
 		head = 0;
-		scope_enter(1);
-		decl_resolve(parser_result, 1);
-		scope_leave(1);
+		scope_enter(0);
+		decl_resolve(parser_result, 0);
+		scope_leave(0);
+		printf("\nTYPE CHECKING:\n\n");
 		decl_typecheck(parser_result);
 		printf("typecheck complete\n");
-	} else {
-		printf("parsing error\n");
 	}
 	fclose(yyin);
+	if(type_check_errors > 0) {
+		exit(1);
+	} else {
+		exit(0);
+	}
 }
 
 FILE* safe_open(const char* filename) {

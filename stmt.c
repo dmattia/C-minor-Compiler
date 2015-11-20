@@ -2,6 +2,8 @@
 #include "stmt.h"
 #include "scope.h"
 
+extern int type_check_errors;
+
 struct stmt * stmt_create( stmt_kind_t kind, struct decl *d, struct expr *init_expr, struct expr *e, struct expr *next_expr, struct stmt *body, struct stmt *else_body ) {
 	struct stmt *s;
 	s = (struct stmt*)malloc(sizeof(*s));	
@@ -89,8 +91,14 @@ void stmt_resolve(struct stmt *s, int quiet) {
 			break;
 		case STMT_IF_ELSE:
 			expr_resolve(s->expr, quiet);
+
+			scope_enter(quiet);
 			stmt_resolve(s->body, quiet);
+			scope_leave(quiet);
+
+			scope_enter(quiet);
 			stmt_resolve(s->else_body, quiet);
+			scope_leave(quiet);
 			break;
 		case STMT_FOR:
 			expr_resolve(s->init_expr, quiet);
@@ -131,7 +139,7 @@ struct type *stmt_typecheck(struct stmt *s) {
 			result = body;
 		} else {
 			printf("You must return the same type consistently within a function\n");
-			exit(1);
+			type_check_errors++;
 		}
 	}
 	struct type *else_part = stmt_typecheck(s->else_body);
@@ -140,22 +148,25 @@ struct type *stmt_typecheck(struct stmt *s) {
 			result = else_part;
 		} else {
 			printf("You must return the same type consistently within a function\n");
-			exit(1);
+			type_check_errors++;
 		}
 	}
 	if(else_part && body && else_part->kind != body->kind) {
 		printf("You must return the same type consistently within a function\n");
-		exit(1);
+		type_check_errors++;
 	}
-
 	if(s->kind == STMT_RETURN) {
 		struct type *new_result = expr_typecheck(s->expr);
 		if(!result || new_result->kind == result->kind) {
 			result = new_result;
+			while(result->subtype) result = result->subtype;
 		} else {
 			printf("You must return the same type consistently within a function\n");
-			exit(1);
+			type_check_errors++;
 		}
 	} 
+	if(s->kind == STMT_PRINT) {
+		expr_typecheck(s->expr->left);
+	}
 	return result;
 }

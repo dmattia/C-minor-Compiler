@@ -4,6 +4,8 @@
 #include "symbol.h"
 #include "error.h"
 
+extern int type_check_errors;
+
 struct expr * expr_create( expr_t kind, struct expr *left, struct expr *right ) {
 	struct expr *e;
 	e = (struct expr*)malloc(sizeof(*e));
@@ -180,7 +182,9 @@ struct type *expr_typecheck(struct expr *e) {
 	struct type *right;
 	switch(e->kind) {
 		case EXPR_LIST:
-			return type_create(TYPE_STRING, 0, 0, 0); // Could be any non void type
+			left = expr_typecheck(e->left);
+			right = expr_typecheck(e->right);
+			return type_create(TYPE_VOID, 0, 0, 0);
 			break;
 		case EXPR_ASSIGNMENT:
 			left = expr_typecheck(e->left);
@@ -194,8 +198,13 @@ struct type *expr_typecheck(struct expr *e) {
 				type_print(right);
 				printf(" to ");
 				type_print(left);
-				printf(" %s\n", e->left->name);
-				exit(1);
+				if(e->left->name) {
+					printf(" %s\n", e->left->name);
+				} else {
+					printf("\n");
+				}
+				type_check_errors++;
+				return left;
 			}
 			break;
 		case EXPR_NOT_EQUALS:
@@ -203,14 +212,15 @@ struct type *expr_typecheck(struct expr *e) {
 			left = expr_typecheck(e->left);
 			right = expr_typecheck(e->right);
 			if(type_equal(left, right) && left->kind != TYPE_FUNCTION && left->kind != TYPE_ARRAY) {
-				return type_copy(left);
+				return type_create(TYPE_BOOLEAN, 0, 0, 0);
 			} else {
 				printf("Cannot perform logical equals operation on ");
 				type_print(left);
 				printf(" and ");
 				type_print(right);
 				printf("\n");
-				exit(1);
+				type_check_errors++;
+				return type_create(TYPE_BOOLEAN, 0, 0, 0);
 			}
 			break;
 		case EXPR_LT:
@@ -227,7 +237,8 @@ struct type *expr_typecheck(struct expr *e) {
 				printf(" and ");
 				type_print(right);
 				printf("\n");
-				exit(1);
+				type_check_errors++;
+				return type_create(TYPE_BOOLEAN, 0, 0, 0);
 			}
 			break;
 		case EXPR_ADD:
@@ -246,7 +257,8 @@ struct type *expr_typecheck(struct expr *e) {
 				printf(" and ");
 				type_print(right);
 				printf("\n");
-				exit(1);
+				type_check_errors++;
+				return type_create(TYPE_INTEGER, 0, 0, 0);
 			}
 			break;
 		case EXPR_NEGATIVE:
@@ -257,7 +269,8 @@ struct type *expr_typecheck(struct expr *e) {
 				printf("Cannot take the negative of ");
 				type_print(right);	
 				printf("\n");
-				exit(1);
+				type_check_errors++;
+				return type_create(TYPE_INTEGER, 0, 0, 0);
 			}
 			break;
 		case EXPR_OR:
@@ -272,7 +285,8 @@ struct type *expr_typecheck(struct expr *e) {
 				printf(" and ");
 				type_print(right);
 				printf("\n");
-				exit(1);
+				type_check_errors++;
+				return type_create(TYPE_BOOLEAN, 0, 0, 0);
 			}
 			break;
 		case EXPR_NOT:
@@ -283,7 +297,8 @@ struct type *expr_typecheck(struct expr *e) {
 				printf("Cannot perform a logical not on ");
 				type_print(right);	
 				printf("\n");
-				exit(1);
+				type_check_errors++;
+				return type_create(TYPE_BOOLEAN, 0, 0, 0);
 			}
 			break;
 		case EXPR_PRE_INCREMENT:
@@ -295,7 +310,8 @@ struct type *expr_typecheck(struct expr *e) {
 				printf("Cannot perform integer operations on ");
 				type_print(right);	
 				printf("\n");
-				exit(1);
+				type_check_errors++;
+				return type_create(TYPE_INTEGER, 0, 0, 0);
 			}
 			break;
 		case EXPR_POST_INCREMENT:
@@ -307,7 +323,8 @@ struct type *expr_typecheck(struct expr *e) {
 				printf("Cannot perform integer operations on ");
 				type_print(left);	
 				printf("\n");
-				exit(1);
+				type_check_errors++;
+				return type_create(TYPE_INTEGER, 0, 0, 0);
 			}
 			break;
 		case EXPR_FUNCTION:
@@ -316,7 +333,8 @@ struct type *expr_typecheck(struct expr *e) {
 			while(param_ptr) {
 				if(!expr_ptr) {
 					printf("Not enough arguments given for function %s\n", e->left->name);
-					exit(1);
+					type_check_errors++;
+					break;
 				}
 				if(!type_equal(param_ptr->type, expr_typecheck(expr_ptr->left))) {
 					printf("Function %s requires a paramater of type ", e->left->name);
@@ -326,14 +344,15 @@ struct type *expr_typecheck(struct expr *e) {
 					printf(" is of type ");
 					type_print(expr_typecheck(expr_ptr->left));
 					printf("\n");
-					exit(1);
+					type_check_errors++;
+					break;
 				}
 				param_ptr = param_ptr->next;
 				expr_ptr = expr_ptr->right;
 			}
 			if(expr_ptr) {
 				printf("Too many arguments given for function %s\n", e->left->name);
-				exit(1);
+				type_check_errors++;
 			}
 			return e->left->symbol->type->subtype;
 			break;
@@ -356,13 +375,15 @@ struct type *expr_typecheck(struct expr *e) {
 			left = expr_typecheck(e->left);
 			right = expr_typecheck(e->right);
 			if(right->kind == TYPE_INTEGER) {
-				return type_create(left->kind, 0, 0, 0);
+				return type_create(left->subtype->kind, 0, 0, 0);
 			} else {
 				printf("Cannot use ");
 				type_print(right);
 				printf(" as an array index. Must use an integer\n");
-				exit(1);
+				type_check_errors++;
+				return type_create(left->subtype->kind, 0, 0, 0);
 			}
 			break;
 	}
+	return type_create(TYPE_VOID, 0, 0, 0);
 }
