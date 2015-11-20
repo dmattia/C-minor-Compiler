@@ -212,7 +212,7 @@ unmatched_stmt	: TOKEN_IF TOKEN_LEFT_PAREN expr TOKEN_RIGHT_PAREN stmt
 expr_list	: expr TOKEN_COMMA expr_list
 			{ $$ = expr_create(EXPR_LIST, $1, $3); }
 		| expr
-			{ $$ = $1; }
+			{ $$ = expr_create(EXPR_LIST, $1, 0); }
 		;
 
 expr		: assignment_expr
@@ -335,7 +335,12 @@ primary_expr	: TOKEN_TRUE
 			}
 		| ident
 			{ $$ = expr_create_name($1); }
-		| ident TOKEN_LEFT_BRACKET opt_expr TOKEN_RIGHT_BRACKET
+		/*
+		| array_expr
+			{{ $$ = $1; }}
+		;
+		*/
+		| ident TOKEN_LEFT_BRACKET expr TOKEN_RIGHT_BRACKET
 			{ $$ = expr_create(EXPR_ARRAY, expr_create_name($1), $3); }
 		;
 

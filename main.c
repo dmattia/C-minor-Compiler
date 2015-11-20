@@ -108,6 +108,8 @@ void typecheck_input(const char* filename) {
 		scope_leave(1);
 		decl_typecheck(parser_result);
 		printf("typecheck complete\n");
+	} else {
+		printf("parsing error\n");
 	}
 	fclose(yyin);
 }

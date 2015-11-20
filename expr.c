@@ -174,6 +174,8 @@ void expr_resolve (struct expr *e, int quiet) {
 
 struct type *expr_typecheck(struct expr *e) {
 	if(!e) return type_create(TYPE_VOID, 0, 0, 0);
+	struct param_list *param_ptr;
+	struct expr *expr_ptr;
 	struct type *left;
 	struct type *right;
 	switch(e->kind) {
@@ -309,11 +311,31 @@ struct type *expr_typecheck(struct expr *e) {
 			}
 			break;
 		case EXPR_FUNCTION:
-			struct param_list *ptr = e->params;
-			while(ptr) {
-				
+			param_ptr = e->left->symbol->type->params;
+			expr_ptr = e->right;
+			while(param_ptr) {
+				if(!expr_ptr) {
+					printf("Not enough arguments given for function %s\n", e->left->name);
+					exit(1);
+				}
+				if(!type_equal(param_ptr->type, expr_typecheck(expr_ptr->left))) {
+					printf("Function %s requires a paramater of type ", e->left->name);
+					type_print(param_ptr->type);
+					printf(" but ");
+					expr_print(expr_ptr->left);
+					printf(" is of type ");
+					type_print(expr_typecheck(expr_ptr->left));
+					printf("\n");
+					exit(1);
+				}
+				param_ptr = param_ptr->next;
+				expr_ptr = expr_ptr->right;
 			}
-			return e->left->symbol->type;
+			if(expr_ptr) {
+				printf("Too many arguments given for function %s\n", e->left->name);
+				exit(1);
+			}
+			return e->left->symbol->type->subtype;
 			break;
 		case EXPR_BOOLEAN:
 			return type_create(TYPE_BOOLEAN, 0, 0, 0);
@@ -334,7 +356,7 @@ struct type *expr_typecheck(struct expr *e) {
 			left = expr_typecheck(e->left);
 			right = expr_typecheck(e->right);
 			if(right->kind == TYPE_INTEGER) {
-				return type_copy(left);
+				return type_create(left->kind, 0, 0, 0);
 			} else {
 				printf("Cannot use ");
 				type_print(right);

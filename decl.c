@@ -44,11 +44,7 @@ void decl_resolve(struct decl *d, int quiet) {
 	if(!d) return;
 	struct symbol *s;
 	if(scope_level() == 1) {
-		if(d->type->kind == TYPE_FUNCTION) {
-			s = symbol_create(SYMBOL_GLOBAL, d->type->subtype, d->name);
-		} else {
-			s = symbol_create(SYMBOL_GLOBAL, d->type, d->name);
-		}
+		s = symbol_create(SYMBOL_GLOBAL, d->type, d->name);
 	} else {
 		if(d->type->kind == TYPE_FUNCTION) {
 			printf("Cannot declare function %s. Functions must be declared globally\n", d->name);
@@ -59,11 +55,14 @@ void decl_resolve(struct decl *d, int quiet) {
 	}
 	if(scope_lookup_local(d->name)) {
 		// variable already exists in this scope
-		error e;
-		e.errorType = ERROR_MULTIPLE_DECLARATION;
-		sprintf(e.description, "%s cannot be declared twice in the same scope", d->name);
-		e.lineNum = -1;
-		throw_error(e);
+		if(d->type->kind == TYPE_FUNCTION && scope_lookup_local(d->name)) { 
+			// a function declaration exists, replace it
+			scope_remove_local(d->name);
+			s = symbol_create(SYMBOL_GLOBAL, d->type, d->name);
+		} else {
+			printf("%s cannot be declared twice in the same scope\n", d->name);
+			exit(1);
+		}
 	}
 	scope_bind(s->name, s, quiet);
 	expr_resolve(d->value, quiet);
@@ -96,15 +95,26 @@ struct type *decl_typecheck(struct decl *d) {
 	} else if (d->code) {
 		// decl is a non-empty function
 		struct type *function_return = stmt_typecheck(d->code);
-		if(d->type->subtype->kind == function_return->kind) {
-			result = type_create(d->type->subtype->kind, 0, 0, 0);
+		if(function_return) {
+			if(type_equal(d->type->subtype, function_return)) {
+				result = type_create(d->type->subtype->kind, 0, 0, 0);
+			} else {
+				printf("Type Error: Function %s expects a ", d->name);
+				type_print(d->type->subtype);
+				printf(" but a ");
+				type_print(function_return);
+				printf(" was returned\n");
+				exit(1);
+			}
 		} else {
-			printf("Type Error: Function %s expects a ", d->name);
-			type_print(d->type->subtype);
-			printf(" but a ");
-			type_print(function_return);
-			printf(" was returned\n");
-			exit(1);
+			if(d->type->subtype->kind == TYPE_VOID) {
+				result = type_create(TYPE_VOID, 0, 0, 0);
+			} else {
+				printf("Type Error: Function %s expects a ", d->name);
+				type_print(d->type->subtype);
+				printf(" but no return value was found\n");
+				exit(1);
+			}
 		}
 	} else if (d->isEmptyFunction) {
 		// decl is an empty function

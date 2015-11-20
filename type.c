@@ -50,5 +50,25 @@ struct type * type_copy( struct type *t ) {
 }
 
 int type_equal(struct type *t1, struct type *t2) {
+	if(!t1 || !t2) return 0;
+	struct param_list *p1;
+	struct param_list *p2;
+	if(t1->kind == TYPE_FUNCTION && t2->kind == TYPE_FUNCTION) {
+		if(t1->subtype != t2->subtype)
+			return 0;
+		p1 = t1->params;
+		p2 = t2->params;
+		while(p1 && p2) {
+			if(p1->type->kind != p2->type->kind) {
+				return 0;
+			}
+			p1 = p1->next;
+			p2 = p2->next;
+		}
+		if(p1 || p2) {
+			return 0;
+		}
+		return 1;
+	}
 	return t1->kind == t2->kind;
 }

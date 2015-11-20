@@ -58,3 +58,8 @@ struct symbol *scope_lookup_local(const char *name) {
 	if(!head) return 0;
 	return hash_table_lookup(head->hash_table, name);
 }
+
+void scope_remove_local(const char *key) {
+	if(!head) return;
+	hash_table_remove(head->hash_table, key);
+}
