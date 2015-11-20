@@ -183,6 +183,8 @@ struct type *expr_typecheck(struct expr *e) {
 		case EXPR_ASSIGNMENT:
 			left = expr_typecheck(e->left);
 			right = expr_typecheck(e->right);
+			while(left->kind == TYPE_ARRAY) left = left->subtype; 
+			while(right->kind == TYPE_ARRAY) left = left->subtype; 
 			if(type_equal(left, right) && left->kind != TYPE_FUNCTION) {
 				return type_copy(left);
 			} else {
@@ -190,7 +192,7 @@ struct type *expr_typecheck(struct expr *e) {
 				type_print(right);
 				printf(" to ");
 				type_print(left);
-				printf("\n");
+				printf(" %s\n", e->left->name);
 				exit(1);
 			}
 			break;
@@ -213,6 +215,19 @@ struct type *expr_typecheck(struct expr *e) {
 		case EXPR_GT:
 		case EXPR_LE:
 		case EXPR_GE:
+			left = expr_typecheck(e->left);
+			right = expr_typecheck(e->right);
+			if(left->kind == TYPE_INTEGER && right->kind == TYPE_INTEGER) {
+				return type_create(TYPE_BOOLEAN, 0, 0, 0);
+			} else {
+				printf("Cannot perform boolean operations on ");
+				type_print(left);
+				printf(" and ");
+				type_print(right);
+				printf("\n");
+				exit(1);
+			}
+			break;
 		case EXPR_ADD:
 		case EXPR_MINUS:
 		case EXPR_TIMES:
@@ -294,7 +309,11 @@ struct type *expr_typecheck(struct expr *e) {
 			}
 			break;
 		case EXPR_FUNCTION:
-			return scope_lookup(e->name)->type;
+			struct param_list *ptr = e->params;
+			while(ptr) {
+				
+			}
+			return e->left->symbol->type;
 			break;
 		case EXPR_BOOLEAN:
 			return type_create(TYPE_BOOLEAN, 0, 0, 0);
@@ -317,9 +336,9 @@ struct type *expr_typecheck(struct expr *e) {
 			if(right->kind == TYPE_INTEGER) {
 				return type_copy(left);
 			} else {
-				printf("Can not use ");
+				printf("Cannot use ");
 				type_print(right);
-				printf(" as an array index. Must use an integer");
+				printf(" as an array index. Must use an integer\n");
 				exit(1);
 			}
 			break;

@@ -44,9 +44,18 @@ void decl_resolve(struct decl *d, int quiet) {
 	if(!d) return;
 	struct symbol *s;
 	if(scope_level() == 1) {
-		s = symbol_create(SYMBOL_GLOBAL, d->type, d->name);
+		if(d->type->kind == TYPE_FUNCTION) {
+			s = symbol_create(SYMBOL_GLOBAL, d->type->subtype, d->name);
+		} else {
+			s = symbol_create(SYMBOL_GLOBAL, d->type, d->name);
+		}
 	} else {
-		s = symbol_create(SYMBOL_LOCAL, d->type, d->name);
+		if(d->type->kind == TYPE_FUNCTION) {
+			printf("Cannot declare function %s. Functions must be declared globally\n", d->name);
+			exit(1);
+		} else {
+			s = symbol_create(SYMBOL_LOCAL, d->type, d->name);
+		}
 	}
 	if(scope_lookup_local(d->name)) {
 		// variable already exists in this scope
@@ -77,8 +86,10 @@ struct type *decl_typecheck(struct decl *d) {
 		if(d->type->kind == expr_result->kind) {
 			result = type_create(d->type->kind, 0, 0, 0);
 		} else {
-			printf("Type mismatch in the declaration:\n");
-			decl_print(d, 0);
+			printf("Type Mismatch: %s expects a ", d->name);
+			type_print(d->type);
+			printf("But was given a ");
+			type_print(expr_result);
 			printf("\n");
 			exit(1);
 		}
@@ -88,9 +99,11 @@ struct type *decl_typecheck(struct decl *d) {
 		if(d->type->subtype->kind == function_return->kind) {
 			result = type_create(d->type->subtype->kind, 0, 0, 0);
 		} else {
-			printf("Type mismatch in the declaration:\n");
-			decl_print(d, 0);
-			printf("\n");
+			printf("Type Error: Function %s expects a ", d->name);
+			type_print(d->type->subtype);
+			printf(" but a ");
+			type_print(function_return);
+			printf(" was returned\n");
 			exit(1);
 		}
 	} else if (d->isEmptyFunction) {
@@ -98,12 +111,23 @@ struct type *decl_typecheck(struct decl *d) {
 		if(d->type->subtype->kind == TYPE_VOID) {
 			result = type_create(TYPE_VOID, 0, 0, 0);
 		} else {
-			printf("Non void funcion %s cannot be empty\n", d->name);
+			printf("Type Error: Non void function %s cannot be empty\n", d->name);
 			exit(1);
 		}
 	} else {
 		// decl is of type:
 		// a : integer; 
+		if (d->type->kind == TYPE_ARRAY) {
+			if (d->type->expr) {
+				if(d->type->expr->kind != EXPR_INT) {
+					printf("Type Error: Declaration of array %s must have a fixed size\n", d->name);
+					exit(1);
+				}
+			} else {
+				printf("Declaration of array %s must have a fixed size\n", d->name);
+				exit(1);
+			}
+		}
 		result = type_create(d->type->kind, 0, 0, 0);
 	}
 	decl_typecheck(d->next);

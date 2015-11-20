@@ -118,21 +118,42 @@ void stmt_resolve(struct stmt *s, int quiet) {
 
 struct type *stmt_typecheck(struct stmt *s) {
 	if(!s) return 0;
-	/*
+	struct type *result = stmt_typecheck(s->next);
+
 	decl_typecheck(s->decl);
 	expr_typecheck(s->init_expr);
 	expr_typecheck(s->expr);
 	expr_typecheck(s->next_expr);
-	stmt_typecheck(s->body);
-	stmt_typecheck(s->next);
-	*/
-	struct type *result = stmt_typecheck(s->next);
+
+	struct type *body = stmt_typecheck(s->body);
+	if(body) {
+		if(!result || body->kind == result->kind) {
+			result = body;
+		} else {
+			printf("You must return the same type consistently within a function\n");
+			exit(1);
+		}
+	}
+	struct type *else_part = stmt_typecheck(s->else_body);
+	if(else_part) {
+		if(!result || else_part->kind == result->kind) {
+			result = else_part;
+		} else {
+			printf("You must return the same type consistently within a function\n");
+			exit(1);
+		}
+	}
+	if(else_part && body && else_part->kind != body->kind) {
+		printf("You must return the same type consistently within a function\n");
+		exit(1);
+	}
+
 	if(s->kind == STMT_RETURN) {
 		struct type *new_result = expr_typecheck(s->expr);
 		if(!result || new_result->kind == result->kind) {
 			result = new_result;
 		} else {
-			printf("You must return the same type within a function\n");
+			printf("You must return the same type consistently within a function\n");
 			exit(1);
 		}
 	} 
