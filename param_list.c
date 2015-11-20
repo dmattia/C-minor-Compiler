@@ -26,7 +26,7 @@ void param_list_print( struct param_list *a ) {
 	}
 }
 
-void param_list_resolve(struct param_list *p) {
+void param_list_resolve(struct param_list *p, int quiet) {
 	if(!p) return;
 	struct symbol *s = symbol_create(SYMBOL_PARAM, p->type, p->name);
 	if(scope_lookup_local(p->name)) {
@@ -36,7 +36,7 @@ void param_list_resolve(struct param_list *p) {
 		e.lineNum = -1;
 		throw_error(e);
 	}
-	scope_bind(s->name, s);
+	scope_bind(s->name, s, quiet);
 	head->params = head->params + 1;
-	param_list_resolve(p->next);
+	param_list_resolve(p->next, quiet);
 }

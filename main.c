@@ -21,6 +21,7 @@ extern struct decl *parser_result;
 void scan_input(const char*);
 void parse_input(const char*);
 void resolve_input(const char*);
+void typecheck_input(const char*);
 FILE* safe_open(const char*);
 
 int main(int argc, char* argv[]) {
@@ -28,15 +29,17 @@ int main(int argc, char* argv[]) {
 	int scan = 0;  // controls if scan should be performed. true if -scan flag is present
 	int parse = 0; // controls if parsing should be performed. true if -parse flag is present
 	int resolve = 0; // controls if resolving the ast should be performed. true if -resolve flag present
+	int typecheck = 0; // controls if typecheckint should be performed. true if -typecheck flag present
 
 	//Check through command line args for flags
 	for(i=1; i < argc; ++i) {
 		if (strcmp(argv[i],"-scan")==0) scan = 1;
 		if (strcmp(argv[i],"-parse")==0) parse = 1;
 		if (strcmp(argv[i],"-resolve")==0) resolve = 1;
+		if (strcmp(argv[i],"-typecheck")==0) typecheck = 1;
 	}
 
-	if ((scan || parse || resolve) && argc <= 2) {
+	if ((scan || parse || resolve || typecheck) && argc <= 2) {
 		error e;
 		e.errorType = ERROR_INVALID_ARGUMENT;
 		e.description = "Must include a file name";
@@ -50,6 +53,8 @@ int main(int argc, char* argv[]) {
 		parse_input(argv[2]);
 	} else if (resolve) {
 		resolve_input(argv[2]);
+	} else if (typecheck) {
+		typecheck_input(argv[2]);
 	} else {
 		error e;
 		e.errorType = ERROR_INVALID_ARGUMENT;
@@ -87,9 +92,22 @@ void resolve_input(const char* filename) {
 	yyin = safe_open(filename);
 	if(!yyparse()) {
 		head = 0;
-		scope_enter();
-		decl_resolve(parser_result);
-		scope_leave();
+		scope_enter(0);
+		decl_resolve(parser_result, 0);
+		scope_leave(0);
+	}
+	fclose(yyin);
+}
+
+void typecheck_input(const char* filename) {
+	yyin = safe_open(filename);
+	if(!yyparse()) {
+		head = 0;
+		scope_enter(1);
+		decl_resolve(parser_result, 1);
+		scope_leave(1);
+		decl_typecheck(parser_result);
+		printf("typecheck complete\n");
 	}
 	fclose(yyin);
 }

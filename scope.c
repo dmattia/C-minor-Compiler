@@ -3,16 +3,16 @@
 #include "stdio.h"
 #include "error.h"
 
-void scope_enter() {
+void scope_enter(int quiet) {
 	struct hash_table *h;	
 	h = hash_table_create(0,0);
 	push_front(h);
-	printf("Entered new scope. New Level: %d\n", scope_level());
+	if(!quiet) printf("Entered new scope. New Level: %d\n", scope_level());
 }
 
-void scope_leave() {
+void scope_leave(int quiet) {
 	pop_front();
-	printf("Leaving scope. New Level: %d\n", scope_level());
+	if(!quiet) printf("Leaving scope. New Level: %d\n", scope_level());
 }
 
 int scope_level() {
@@ -25,19 +25,19 @@ int scope_level() {
 	return level;
 }
 
-void scope_bind(const char *name, struct symbol *sym) {
+void scope_bind(const char *name, struct symbol *sym, int quiet) {
 	if(head) {
 		hash_table_insert(head->hash_table, name, sym);
 	}
 	switch(sym->kind) {
 		case SYMBOL_LOCAL:
-			printf("%s resolves to local %d\n", name, hash_table_size(head->hash_table) - head->params);
+			if(!quiet) printf("%s resolves to local %d\n", name, hash_table_size(head->hash_table) - head->params);
 			break;
 		case SYMBOL_PARAM:
-			printf("%s resolves to param %d\n", name, hash_table_size(head->hash_table));
+			if(!quiet) printf("%s resolves to param %d\n", name, hash_table_size(head->hash_table));
 			break;
 		case SYMBOL_GLOBAL:
-			printf("%s resolves to global %s\n", name, name);
+			if(!quiet) printf("%s resolves to global %s\n", name, name);
 			break;
 	}
 }

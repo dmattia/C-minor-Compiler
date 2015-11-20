@@ -78,40 +78,63 @@ void stmt_print( struct stmt * s, int indent ) {
 	stmt_print(s->next, indent);
 }
 
-void stmt_resolve(struct stmt *s) {
+void stmt_resolve(struct stmt *s, int quiet) {
 	if(!s) return;
 	switch(s->kind) {
 		case STMT_DECL:
-			decl_resolve(s->decl);
+			decl_resolve(s->decl, quiet);
 			break;
 		case STMT_EXPR:
-			expr_resolve(s->expr);
+			expr_resolve(s->expr, quiet);
 			break;
 		case STMT_IF_ELSE:
-			expr_resolve(s->expr);
-			stmt_resolve(s->body);
-			stmt_resolve(s->else_body);
+			expr_resolve(s->expr, quiet);
+			stmt_resolve(s->body, quiet);
+			stmt_resolve(s->else_body, quiet);
 			break;
 		case STMT_FOR:
-			expr_resolve(s->init_expr);
-			expr_resolve(s->expr);
-			expr_resolve(s->next_expr);
-			stmt_resolve(s->body);
+			expr_resolve(s->init_expr, quiet);
+			expr_resolve(s->expr, quiet);
+			expr_resolve(s->next_expr, quiet);
+			stmt_resolve(s->body, quiet);
 			break;
 		case STMT_WHILE:
 			// No while loops allowed
 			break;
 		case STMT_PRINT:
-			expr_resolve(s->expr);
+			expr_resolve(s->expr, quiet);
 			break;
 		case STMT_RETURN:
-			expr_resolve(s->expr);
+			expr_resolve(s->expr, quiet);
 			break;
 		case STMT_BLOCK:
-			scope_enter();
-			stmt_resolve(s->body);
-			scope_leave();
+			scope_enter(quiet);
+			stmt_resolve(s->body, quiet);
+			scope_leave(quiet);
 			break;
 	}
-	stmt_resolve(s->next);
+	stmt_resolve(s->next, quiet);
+}
+
+struct type *stmt_typecheck(struct stmt *s) {
+	if(!s) return 0;
+	/*
+	decl_typecheck(s->decl);
+	expr_typecheck(s->init_expr);
+	expr_typecheck(s->expr);
+	expr_typecheck(s->next_expr);
+	stmt_typecheck(s->body);
+	stmt_typecheck(s->next);
+	*/
+	struct type *result = stmt_typecheck(s->next);
+	if(s->kind == STMT_RETURN) {
+		struct type *new_result = expr_typecheck(s->expr);
+		if(!result || new_result->kind == result->kind) {
+			result = new_result;
+		} else {
+			printf("You must return the same type within a function\n");
+			exit(1);
+		}
+	} 
+	return result;
 }

@@ -9,7 +9,8 @@ void throw_error(error e) {
 	} else {
 		fprintf(stderr,"%s: %s\n",error_type(e),e.description);	
 	}
-	exit((int)e.errorType);
+	//exit((int)e.errorType);
+	exit(1);
 }
 
 char* error_type(error e) {

@@ -1,4 +1,5 @@
 #include "decl.h"
+#include "stmt.h"
 #include "stdlib.h"
 #include "error.h"
 #include "scope.h"
@@ -39,7 +40,7 @@ void decl_print( struct decl *d, int indent ) {
 	decl_print(d->next, indent);
 }
 
-void decl_resolve(struct decl *d) {
+void decl_resolve(struct decl *d, int quiet) {
 	if(!d) return;
 	struct symbol *s;
 	if(scope_level() == 1) {
@@ -55,13 +56,56 @@ void decl_resolve(struct decl *d) {
 		e.lineNum = -1;
 		throw_error(e);
 	}
-	scope_bind(s->name, s);
-	expr_resolve(d->value);
+	scope_bind(s->name, s, quiet);
+	expr_resolve(d->value, quiet);
 	if(d->code) {
-		scope_enter();
-		param_list_resolve(d->type->params);
-		stmt_resolve(d->code);
-		scope_leave();
+		scope_enter(quiet);
+		param_list_resolve(d->type->params, quiet);
+		stmt_resolve(d->code, quiet);
+		scope_leave(quiet);
 	}
-	decl_resolve(d->next);
+	decl_resolve(d->next, quiet);
+}
+
+struct type *decl_typecheck(struct decl *d) {
+	if(!d) return type_create(TYPE_VOID, 0, 0, 0);
+	struct type *result;
+	if (d->value) {
+		// decl is of type:
+		// a : integer = 5;
+		struct type *expr_result = expr_typecheck(d->value);
+		if(d->type->kind == expr_result->kind) {
+			result = type_create(d->type->kind, 0, 0, 0);
+		} else {
+			printf("Type mismatch in the declaration:\n");
+			decl_print(d, 0);
+			printf("\n");
+			exit(1);
+		}
+	} else if (d->code) {
+		// decl is a non-empty function
+		struct type *function_return = stmt_typecheck(d->code);
+		if(d->type->subtype->kind == function_return->kind) {
+			result = type_create(d->type->subtype->kind, 0, 0, 0);
+		} else {
+			printf("Type mismatch in the declaration:\n");
+			decl_print(d, 0);
+			printf("\n");
+			exit(1);
+		}
+	} else if (d->isEmptyFunction) {
+		// decl is an empty function
+		if(d->type->subtype->kind == TYPE_VOID) {
+			result = type_create(TYPE_VOID, 0, 0, 0);
+		} else {
+			printf("Non void funcion %s cannot be empty\n", d->name);
+			exit(1);
+		}
+	} else {
+		// decl is of type:
+		// a : integer; 
+		result = type_create(d->type->kind, 0, 0, 0);
+	}
+	decl_typecheck(d->next);
+	return result;
 }

@@ -5,10 +5,10 @@
 #include "symbol.h"
 #include "decl.h"
 
-void scope_enter();
-void scope_leave();
+void scope_enter(int quiet);
+void scope_leave(int quiet);
 int scope_level();
-void scope_bind(const char*, struct symbol*);
+void scope_bind(const char*, struct symbol*, int quiet);
 struct symbol *scope_lookup(const char*);
 struct symbol *scope_lookup_local(const char*);
 

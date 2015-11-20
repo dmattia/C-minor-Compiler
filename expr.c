@@ -156,21 +156,18 @@ void expr_print( struct expr *e ) {
 	if(e->kind == EXPR_ARRAY) printf("]");
 }
 
-void expr_resolve (struct expr *e) {
+void expr_resolve (struct expr *e, int quiet) {
 	if(!e) return;
-	expr_resolve(e->left);
-	expr_resolve(e->right);
+	expr_resolve(e->left, quiet);
+	expr_resolve(e->right, quiet);
 	if(e->kind == EXPR_NAME) {
 		struct symbol *s = scope_lookup(e->name);
 		if(s) {
 			e->symbol = s;
-			printf("Found use of symbol %s\n", e->name);
+			if(!quiet) printf("Found use of symbol %s\n", e->name);
 		} else {
-			error err;
-			err.errorType = ERROR_UNFOUND_IDENTIFIER;
-			sprintf(err.description, "%s has not been declared", e->name);
-			err.lineNum = -1;
-			throw_error(err);
+			if(!quiet) printf("Unfound identifier: %s\n", e->name);
+			exit(1);
 		}
 	}
 }
