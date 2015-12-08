@@ -1,5 +1,5 @@
 //Implementation of ScannerUtil.h
-#include "ScannerUtil.h"
+#include "scannerUtil.h"
 #include <string.h>
 #include <stdlib.h>
 

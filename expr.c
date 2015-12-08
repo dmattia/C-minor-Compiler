@@ -384,6 +384,10 @@ struct type *expr_typecheck(struct expr *e) {
 				return type_create(left->subtype->kind, 0, 0, 0);
 			}
 			break;
+		case EXPR_ARRAY_LITERAL:
+			left = expr_typecheck(e->right->left);
+			return type_create(TYPE_ARRAY, 0, 0, left->subtype);
+			break;
 	}
 	return type_create(TYPE_VOID, 0, 0, 0);
 }

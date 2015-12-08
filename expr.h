@@ -33,7 +33,8 @@ typedef enum {
 	EXPR_CHAR,
 	EXPR_STRING,
 	EXPR_NAME,
-	EXPR_ARRAY
+	EXPR_ARRAY,
+	EXPR_ARRAY_LITERAL
 } expr_t;
 
 struct expr {

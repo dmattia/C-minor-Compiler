@@ -317,6 +317,8 @@ group_expr	: TOKEN_LEFT_PAREN expr TOKEN_RIGHT_PAREN
 			{ $$ = expr_create(EXPR_FUNCTION, expr_create_name($1), 0); }
 		| primary_expr
 			{ $$ = $1; }
+		| TOKEN_LEFT_BRACE expr_list TOKEN_RIGHT_BRACE
+			{ $$ = expr_create(EXPR_ARRAY_LITERAL, 0, $2); }
 		;
 
 primary_expr	: TOKEN_TRUE
