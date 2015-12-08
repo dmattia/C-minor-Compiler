@@ -1,3 +1,7 @@
+cminor
+output
+output.s
+
 *.o
 *.out
 

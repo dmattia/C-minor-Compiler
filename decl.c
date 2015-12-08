@@ -145,3 +145,40 @@ struct type *decl_typecheck(struct decl *d) {
 	decl_typecheck(d->next);
 	return result;
 }
+
+void decl_codegen(struct decl *d, FILE *file) {
+	if(!d) return;
+	switch(d->type->kind) {
+		case TYPE_BOOLEAN:
+			break;
+		case TYPE_CHARACTER:
+			break;
+		case TYPE_INTEGER:
+			fprintf(file, "%s:\n", d->name);
+			if(d->value) {
+				fprintf(file, "\t.quad %d\n", d->value->literal_value);
+			}
+			break;
+		case TYPE_STRING:
+			fprintf(file, "%s:\n", d->name);
+			if(d->value) {
+				fprintf(file, "\t.string %s\n", d->value->string_literal);
+			}
+			break;
+		case TYPE_ARRAY:
+			printf("No array support\n");
+			exit(1);
+		case TYPE_FUNCTION:
+			fprintf(file, "\n.global %s\n.type %s, @function\n%s:\n", d->name, d->name, d->name);
+			break;
+		case TYPE_VOID:
+			break;
+	}
+	decl_codegen(d->next, file);
+	/*
+	fprintf(file, ".data\n");
+	fprintf(file, ".text\n");
+	fprintf(file, ".global main\n");
+	fprintf(file, "main:\n");
+	*/
+}
