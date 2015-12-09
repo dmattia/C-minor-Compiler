@@ -445,18 +445,26 @@ void expr_codegen(struct expr *e, FILE *file) {
 		case EXPR_FUNCTION:
 			break;
 		case EXPR_BOOLEAN:
+			e->reg = register_alloc();			
+			fprintf(file, "\tMOV $%d,  %s\n", e->literal_value, register_name(e->reg));
 			break;
 		case EXPR_INT:
 			e->reg = register_alloc();			
-			fprintf(file, "MOV $%d,  %s\n", e->literal_value, register_name(e->reg));
+			fprintf(file, "\tMOV $%d,  %s\n", e->literal_value, register_name(e->reg));
 			break;
 		case EXPR_CHAR:
 			e->reg = register_alloc();			
-			fprintf(file, "MOV $%d,  %s\n", e->literal_value, register_name(e->reg));
+			fprintf(file, "\tMOV $%d,  %s\n", e->literal_value, register_name(e->reg));
 			break;
 		case EXPR_STRING:
+			//fprintf(file, "\tMOV $%d,  %s\n", e->string_literal, register_name(e->reg));
+			// TODO: Declare strings in data and get into a register somehow
+			e->reg = register_alloc();
+			fprintf(file, "\tGET STRING INTO %s\n", register_name(e->reg));
 			break;
 		case EXPR_NAME:
+			e->reg = register_alloc();
+			fprintf(file, "\tMOV %s, %s\n", symbol_code(e->symbol), register_name(e->reg));
 			break;
 		case EXPR_ARRAY:
 			break;

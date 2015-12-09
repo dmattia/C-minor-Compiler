@@ -148,7 +148,15 @@ void codegen_input(const char* filename) {
 		FILE *output;
 		output = fopen("output.s", "w");
 		fprintf(output, ".file \"%s\"\n\n", filename);
-		decl_codegen(parser_result, output);
+		fprintf(output, ".data\n");
+		// Print a few strings useful for printing non-string values
+		fprintf(output, "integer_string:\n");
+		fprintf(output, "\t.string \"\%%d\\n\"\n");
+		fprintf(output, "char_string:\n");
+		fprintf(output, "\t.string \"\%%c\\n\"\n");
+		decl_global_data_codegen(parser_result, output);
+		fprintf(output, "\n.text\n");
+		decl_global_functions_codegen(parser_result, output);
 		exit(0);
 	}
 }

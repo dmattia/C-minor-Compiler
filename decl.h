@@ -21,5 +21,7 @@ void decl_print( struct decl *d, int indent );
 void decl_resolve(struct decl*, int quiet);
 struct type * decl_typecheck(struct decl*);
 void decl_codegen(struct decl*, FILE*);
+void decl_global_data_codegen(struct decl*, FILE*);
+void decl_global_functions_codegen(struct decl*, FILE*);
 
 #endif

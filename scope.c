@@ -31,10 +31,12 @@ void scope_bind(const char *name, struct symbol *sym, int quiet) {
 	}
 	switch(sym->kind) {
 		case SYMBOL_LOCAL:
-			if(!quiet) printf("%s resolves to local %d\n", name, hash_table_size(head->hash_table) - head->params);
+			sym->which = hash_table_size(head->hash_table);
+			if(!quiet) printf("%s resolves to local %d\n", name, sym->which - head->params);
 			break;
 		case SYMBOL_PARAM:
-			if(!quiet) printf("%s resolves to param %d\n", name, hash_table_size(head->hash_table));
+			sym->which = hash_table_size(head->hash_table);
+			if(!quiet) printf("%s resolves to param %d\n", name, sym->which);
 			break;
 		case SYMBOL_GLOBAL:
 			if(!quiet) printf("%s resolves to global %s\n", name, name);

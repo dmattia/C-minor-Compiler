@@ -171,14 +171,14 @@ struct type *stmt_typecheck(struct stmt *s) {
 	return result;
 }
 
-void stmt_codegen( struct stmt *s, FILE *file) {
+void stmt_codegen( struct stmt *s, FILE *file ) {
+	struct expr *e;
 	if(!s) return;
 	switch(s->kind) {
 		case STMT_DECL:
 			decl_codegen(s->decl, file);
 			break;
 		case STMT_EXPR:
-			fprintf(file, "STMT_EXPR\n");
 			expr_codegen(s->expr, file);
 			break;
 		case STMT_IF_ELSE:
@@ -186,13 +186,55 @@ void stmt_codegen( struct stmt *s, FILE *file) {
 		case STMT_FOR:
 			break;
 		case STMT_WHILE:
+			printf("While loops not implemented\n");
+			exit(1);
 			break;
 		case STMT_PRINT:
+			fprintf(file, "\n");
+			e = s->expr;
+			while(e) {
+				if(!e->left) break;
+				expr_codegen(e->left, file);
+				if(e->left->kind == EXPR_STRING) {
+					// TODO: Get strings into data so they can be printed
+					fprintf(file, "\tMOV %s, %rdi\t\t# Move String in for printing\n", register_name(e->left->reg)); 
+				} else if(e->left->kind == EXPR_INT) {
+					fprintf(file, "\tMOV $integer_string, %rdi\n");
+					fprintf(file, "\tMOV %s, %rsi\n", register_name(e->left->reg));
+				} else if(e->left->kind == EXPR_CHAR) {
+					fprintf(file, "\tMOV $char_string, %rdi\n");
+					fprintf(file, "\tMOV %s, %rsi\n", register_name(e->left->reg));
+				} else if(e->left->kind == EXPR_BOOLEAN) {
+					fprintf(file, "\tMOV $integer_string, %rdi\n");
+					fprintf(file, "\tMOV %s, %rsi\n", register_name(e->left->reg));
+				}
+				fprintf(file, "\tMOV $0, %rax\t\t# There are no floating point args\n", register_name(e->left->reg)); 
+				fprintf(file, "\tPUSHQ %r10\n");
+				fprintf(file, "\tPUSHQ %r11\n");
+				fprintf(file, "\n\tCALL printf\n\n");
+				fprintf(file, "\tPOPQ %r11\n");
+				fprintf(file, "\tPOPQ %r10\n\n");
+				register_free(e->left->reg);
+				e = e->right;
+			}
 			break;
 		case STMT_RETURN:
+			expr_codegen(s->expr, file);
+			fprintf(file, "\tMOV %s, %rax\t\t# Setup rax for returning\n", register_name(s->expr->reg));
+			register_free(s->expr->reg);
 			break;
 		case STMT_BLOCK:
+			/* do nothing */
 			break;
 	}
 	stmt_codegen(s->next, file);
+}
+
+int stmt_count_local_variables( struct stmt *s ) {
+	if(!s) return 0;
+	if(s->kind == STMT_DECL) {
+		return 1 + stmt_count_local_variables(s->next);
+	} else {
+		return 0 + stmt_count_local_variables(s->next);
+	}
 }
