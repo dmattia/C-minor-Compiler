@@ -3,6 +3,7 @@
 
 #include "symbol.h"
 #include "type.h"
+#include <stdio.h>
 
 typedef enum {
 	EXPR_LIST,
@@ -42,6 +43,7 @@ struct expr {
 	expr_t kind;
 	struct expr *left;
 	struct expr *right;
+	int reg;
 
 	/* used by leaf expr types */
 	const char *name;
@@ -61,5 +63,6 @@ struct expr * expr_create_string_literal( const char *str );
 void expr_print( struct expr *e );
 void expr_resolve( struct expr *e, int quiet );
 struct type * expr_typecheck( struct expr *e );
+void expr_codegen( struct expr*, FILE*);
 
 #endif

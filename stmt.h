@@ -29,5 +29,6 @@ struct stmt * stmt_create( stmt_kind_t kind, struct decl *d, struct expr *init_e
 void stmt_print( struct stmt *s, int indent );
 void stmt_resolve( struct stmt *s, int quiet );
 struct type * stmt_typecheck( struct stmt *s );
+void stmt_codegen( struct stmt*, FILE*);
 
 #endif

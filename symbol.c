@@ -9,3 +9,8 @@ struct symbol * symbol_create( symbol_t kind, struct type *type, char *name ) {
 	s->name = name;
 	return s;
 }
+
+// Returns the register value for a symbol
+char* symbol_code( struct symbol *s) {
+	return "SYM_CODE_NOT_DONE_YET";
+}

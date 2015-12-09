@@ -3,6 +3,7 @@
 #include "scope.h"
 #include "symbol.h"
 #include "error.h"
+#include "register.h"
 
 extern int type_check_errors;
 
@@ -12,6 +13,7 @@ struct expr * expr_create( expr_t kind, struct expr *left, struct expr *right ) 
 	e->kind = kind;
 	e->left = left;
 	e->right = right;
+	e->reg = -1;
 	return e;
 }
 
@@ -150,6 +152,8 @@ void expr_print( struct expr *e ) {
 			break;
 		case EXPR_ARRAY:
 			printf("[");
+			break;
+		case EXPR_ARRAY_LITERAL:
 			break;
 	}
 	expr_print(e->right);
@@ -390,4 +394,73 @@ struct type *expr_typecheck(struct expr *e) {
 			break;
 	}
 	return type_create(TYPE_VOID, 0, 0, 0);
+}
+
+void expr_codegen(struct expr *e, FILE *file) {
+	switch(e->kind) {
+		case EXPR_LIST:
+			break;
+		case EXPR_ASSIGNMENT:
+			break;
+		case EXPR_OR:
+			break;
+		case EXPR_AND:
+			break;
+		case EXPR_LT:
+			break;
+		case EXPR_GT:
+			break;
+		case EXPR_LE:
+			break;
+		case EXPR_GE:
+			break;
+		case EXPR_NOT_EQUALS:
+			break;
+		case EXPR_EQUALS:
+			break;
+		case EXPR_ADD:
+			break;
+		case EXPR_MINUS:
+			break;
+		case EXPR_TIMES:
+			break;
+		case EXPR_DIVIDES:
+			break;
+		case EXPR_MOD:
+			break;
+		case EXPR_POWER:
+			break;
+		case EXPR_NEGATIVE:
+			break;
+		case EXPR_NOT:
+			break;
+		case EXPR_PRE_INCREMENT:
+			break;
+		case EXPR_PRE_DECREMENT:
+			break;
+		case EXPR_POST_INCREMENT:
+			break;
+		case EXPR_POST_DECREMENT:
+			break;
+		case EXPR_FUNCTION:
+			break;
+		case EXPR_BOOLEAN:
+			break;
+		case EXPR_INT:
+			e->reg = register_alloc();			
+			fprintf(file, "MOV $%d,  %s\n", e->literal_value, register_name(e->reg));
+			break;
+		case EXPR_CHAR:
+			e->reg = register_alloc();			
+			fprintf(file, "MOV $%d,  %s\n", e->literal_value, register_name(e->reg));
+			break;
+		case EXPR_STRING:
+			break;
+		case EXPR_NAME:
+			break;
+		case EXPR_ARRAY:
+			break;
+		case EXPR_ARRAY_LITERAL:
+			break;	
+	}
 }

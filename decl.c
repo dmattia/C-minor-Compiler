@@ -150,9 +150,9 @@ void decl_codegen(struct decl *d, FILE *file) {
 	if(!d) return;
 	switch(d->type->kind) {
 		case TYPE_BOOLEAN:
-			break;
+			/* fall through */
 		case TYPE_CHARACTER:
-			break;
+			/* fall through */
 		case TYPE_INTEGER:
 			fprintf(file, "%s:\n", d->name);
 			if(d->value) {
@@ -169,7 +169,11 @@ void decl_codegen(struct decl *d, FILE *file) {
 			printf("No array support\n");
 			exit(1);
 		case TYPE_FUNCTION:
-			fprintf(file, "\n.global %s\n.type %s, @function\n%s:\n", d->name, d->name, d->name);
+			fprintf(file, "\n.global %s\n", d->name);
+			if(d->code) {
+				fprintf(file, ".type %s, @function\n%s:\n", d->name, d->name);
+				stmt_codegen(d->code, file);
+			}
 			break;
 		case TYPE_VOID:
 			break;

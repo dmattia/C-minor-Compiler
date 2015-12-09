@@ -1,5 +1,8 @@
+#include <stdio.h>
+#include <stdlib.h>
 #include "register.h"
 
+// returns the register name for a valid register number
 const char* register_name(int r) {
 	switch(r) {
 		case 0: return "%rax";
@@ -20,4 +23,26 @@ const char* register_name(int r) {
 		case 15: return "%r15";
 		default: return "Not a valid register";
 	}
+}
+
+// returns the integer cooresponding to the next open scratch variable 
+int register_alloc() {
+	// return %rbx if open
+	if(!regs[1]) return 1;
+	int i = 10;
+	while(i < 16) {
+		if(!regs[i]) return i;
+		++i;
+	}
+	printf("Ran out of registers to alloc\n");
+	exit(1);
+}
+
+// free a register
+void register_free(int r) {
+	if(r < 0 || r > 15) {
+		printf("Cannot free register %d.\n", r);
+		exit(1);
+	}
+	regs[r] = 0;
 }

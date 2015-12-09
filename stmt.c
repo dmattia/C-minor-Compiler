@@ -170,3 +170,29 @@ struct type *stmt_typecheck(struct stmt *s) {
 	}
 	return result;
 }
+
+void stmt_codegen( struct stmt *s, FILE *file) {
+	if(!s) return;
+	switch(s->kind) {
+		case STMT_DECL:
+			decl_codegen(s->decl, file);
+			break;
+		case STMT_EXPR:
+			fprintf(file, "STMT_EXPR\n");
+			expr_codegen(s->expr, file);
+			break;
+		case STMT_IF_ELSE:
+			break;
+		case STMT_FOR:
+			break;
+		case STMT_WHILE:
+			break;
+		case STMT_PRINT:
+			break;
+		case STMT_RETURN:
+			break;
+		case STMT_BLOCK:
+			break;
+	}
+	stmt_codegen(s->next, file);
+}

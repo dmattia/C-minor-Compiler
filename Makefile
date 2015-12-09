@@ -1,8 +1,8 @@
 all: main.o register.o scope.o list.o hash_table.o error.o token.o parser.tab.o lex.yy.o scannerUtil.o expr.o decl.o type.o stmt.o param_list.o symbol.o
-	gcc main.o scope.o list.o hash_table.o token.o error.o lex.yy.o parser.tab.o scannerUtil.o expr.o decl.o type.o stmt.o param_list.o symbol.o -ll -o cminor
+	gcc main.o register.o scope.o list.o hash_table.o token.o error.o lex.yy.o parser.tab.o scannerUtil.o expr.o decl.o type.o stmt.o param_list.o symbol.o -ll -o cminor
 
 debug: main.o register.o scope.o list.o hash_table.o error.o token.o parser.tab.o lex.yy.o scannerUtil.o expr.o decl.o type.o stmt.o param_list.o symbol.o
-	gcc -g main.o scope.o list.o hash_table.o token.o error.o lex.yy.o parser.tab.o scannerUtil.o expr.o decl.o type.o stmt.o param_list.o symbol.o -ll -o cminor
+	gcc -g main.o register.o scope.o list.o hash_table.o token.o error.o lex.yy.o parser.tab.o scannerUtil.o expr.o decl.o type.o stmt.o param_list.o symbol.o -ll -o cminor
 
 %.o: %.c *.h
 	gcc -c $< -o $@
