@@ -28,10 +28,16 @@ const char* register_name(int r) {
 // returns the integer cooresponding to the next open scratch variable 
 int register_alloc() {
 	// return %rbx if open
-	if(!regs[1]) return 1;
+	if(!regs[1]) {
+		regs[1] = 1;
+		return 1;
+	}
 	int i = 10;
 	while(i < 16) {
-		if(!regs[i]) return i;
+		if(!regs[i]) {
+			regs[i] = 1;
+			return i;
+		}
 		++i;
 	}
 	printf("Ran out of registers to alloc\n");

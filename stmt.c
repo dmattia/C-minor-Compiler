@@ -173,6 +173,10 @@ struct type *stmt_typecheck(struct stmt *s) {
 
 void stmt_codegen( struct stmt *s, FILE *file ) {
 	struct expr *e;
+	struct string_node *sn;
+	int string_count = 0;
+	char* string_label = (char*)malloc(9);
+	struct symbol *sym;
 	if(!s) return;
 	switch(s->kind) {
 		case STMT_DECL:
@@ -195,23 +199,74 @@ void stmt_codegen( struct stmt *s, FILE *file ) {
 			while(e) {
 				if(!e->left) break;
 				expr_codegen(e->left, file);
-				if(e->left->kind == EXPR_STRING) {
-					// TODO: Get strings into data so they can be printed
-					fprintf(file, "\tMOV %s, %rdi\t\t# Move String in for printing\n", register_name(e->left->reg)); 
-				} else if(e->left->kind == EXPR_INT) {
-					fprintf(file, "\tMOV $integer_string, %rdi\n");
-					fprintf(file, "\tMOV %s, %rsi\n", register_name(e->left->reg));
-				} else if(e->left->kind == EXPR_CHAR) {
-					fprintf(file, "\tMOV $char_string, %rdi\n");
-					fprintf(file, "\tMOV %s, %rsi\n", register_name(e->left->reg));
-				} else if(e->left->kind == EXPR_BOOLEAN) {
-					fprintf(file, "\tMOV $integer_string, %rdi\n");
-					fprintf(file, "\tMOV %s, %rsi\n", register_name(e->left->reg));
-				}
+				fprintf(file, "\tMOV %s, %rdi\n", register_name(e->left->reg));
 				fprintf(file, "\tMOV $0, %rax\t\t# There are no floating point args\n", register_name(e->left->reg)); 
 				fprintf(file, "\tPUSHQ %r10\n");
 				fprintf(file, "\tPUSHQ %r11\n");
-				fprintf(file, "\n\tCALL printf\n\n");
+				switch(e->left->kind) {
+					case EXPR_LIST:
+						break;
+					case EXPR_ASSIGNMENT:
+						// TODO: Look up type of var assigned to
+						break;
+					case EXPR_OR:
+					case EXPR_AND:
+					case EXPR_LT:
+					case EXPR_GT:
+					case EXPR_LE:
+					case EXPR_GE:
+					case EXPR_NOT_EQUALS:
+					case EXPR_EQUALS:
+					case EXPR_BOOLEAN:
+						fprintf(file, "\n\tCALL print_boolean\n\n");
+						break;
+					case EXPR_ADD:
+					case EXPR_MINUS:
+					case EXPR_TIMES:
+					case EXPR_DIVIDES:
+					case EXPR_MOD:
+					case EXPR_POWER:
+					case EXPR_NEGATIVE:
+					case EXPR_NOT:
+					case EXPR_PRE_INCREMENT:
+					case EXPR_PRE_DECREMENT:
+					case EXPR_POST_INCREMENT:
+					case EXPR_POST_DECREMENT:
+					case EXPR_INT:
+						fprintf(file, "\n\tCALL print_integer\n\n");
+						break;
+					case EXPR_FUNCTION:
+						// TODO: Look up function type. switch on it
+						break;
+					case EXPR_CHAR:
+						fprintf(file, "\n\tCALL print_character\n\n");
+						break;
+					case EXPR_STRING:
+						fprintf(file, "\n\tCALL print_string\n\n");
+						break;
+					case EXPR_NAME:
+						switch(expr_typecheck(e->left)->kind) {
+							case TYPE_BOOLEAN:
+								break;
+							case TYPE_CHARACTER:
+								fprintf(file, "\n\tCALL print_character\n\n");
+								break;
+							case TYPE_INTEGER:
+								fprintf(file, "\n\tCALL print_integer\n\n");
+								break;
+							case TYPE_STRING:
+								fprintf(file, "\n\tCALL print_string\n\n");
+								break;
+							default:
+								break;
+						}
+						break;
+					case EXPR_ARRAY:
+					case EXPR_ARRAY_LITERAL:
+						printf("No Array Support\n");
+						exit(1);
+						break;
+				}
 				fprintf(file, "\tPOPQ %r11\n");
 				fprintf(file, "\tPOPQ %r10\n\n");
 				register_free(e->left->reg);

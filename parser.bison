@@ -328,7 +328,13 @@ primary_expr	: TOKEN_TRUE
 		| TOKEN_INTEGER_LITERAL
 			{ $$ = expr_create_integer_literal(atof(yytext)); }
 		| TOKEN_CHAR_LITERAL
-			{ $$ = expr_create_character_literal(yytext[1]); }
+			{ 
+				if(yytext[1] == 92) {
+					$$ = expr_create_character_literal(10); 
+				} else {
+					$$ = expr_create_character_literal(yytext[1]); 
+				}
+			}
 		| TOKEN_STRING_LITERAL
 			{ char *text;
 			  text = (char *)malloc(515); // max length string plus quotations plus null char

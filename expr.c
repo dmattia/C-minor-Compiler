@@ -4,8 +4,10 @@
 #include "symbol.h"
 #include "error.h"
 #include "register.h"
+#include "string_list.h"
 
 extern int type_check_errors;
+extern struct string_node *string_head;
 
 struct expr * expr_create( expr_t kind, struct expr *left, struct expr *right ) {
 	struct expr *e;
@@ -14,6 +16,9 @@ struct expr * expr_create( expr_t kind, struct expr *left, struct expr *right ) 
 	e->left = left;
 	e->right = right;
 	e->reg = -1;
+	e->string_literal = 0;
+	e->name = 0;
+	e->literal_value = 0;
 	return e;
 }
 
@@ -175,6 +180,10 @@ void expr_resolve (struct expr *e, int quiet) {
 			if(!quiet) printf("Unfound identifier: %s\n", e->name);
 			exit(1);
 		}
+	} else if(e->kind == EXPR_STRING) {
+		push_string_front(e->string_literal);
+	} else if(e->kind == EXPR_ASSIGNMENT) {
+		e->left->symbol = e->right->symbol;
 	}
 }
 
@@ -397,8 +406,16 @@ struct type *expr_typecheck(struct expr *e) {
 }
 
 void expr_codegen(struct expr *e, FILE *file) {
+	int string_count = 0, found = 0;
+	struct string_node *sn;
+	char* string_label = (char*)malloc(9);
+	if(!e) return;
 	switch(e->kind) {
 		case EXPR_LIST:
+			/*
+			expr_codegen(e->left);
+			expr_codegen(e->right);
+			*/
 			break;
 		case EXPR_ASSIGNMENT:
 			break;
@@ -419,6 +436,11 @@ void expr_codegen(struct expr *e, FILE *file) {
 		case EXPR_EQUALS:
 			break;
 		case EXPR_ADD:
+			expr_codegen(e->left, file);
+			expr_codegen(e->right, file);
+			fprintf(file, "\tADD %s, %s\n", register_name(e->left->reg), register_name(e->right->reg));
+			e->reg = e->right->reg;
+			register_free(e->left->reg);
 			break;
 		case EXPR_MINUS:
 			break;
@@ -457,10 +479,25 @@ void expr_codegen(struct expr *e, FILE *file) {
 			fprintf(file, "\tMOV $%d,  %s\n", e->literal_value, register_name(e->reg));
 			break;
 		case EXPR_STRING:
-			//fprintf(file, "\tMOV $%d,  %s\n", e->string_literal, register_name(e->reg));
-			// TODO: Declare strings in data and get into a register somehow
+			// find the string
+			sn = string_head;
+			while(sn) {
+				if(!strcmp(sn->text, e->string_literal)) {
+					// string found
+					found = 1;
+					sprintf(string_label, "LC%d", string_count);
+					e->reg = register_alloc();
+					fprintf(file, "\tMOV $%s, %s\t\t# Move string into register\n", string_label, register_name(e->reg));
+					break;
+				}
+				string_count++;
+				sn = sn->next;
+			}
+			if(!found) {
+				printf("Could not find string %s in data\n", e->string_literal);
+				exit(1);
+			}
 			e->reg = register_alloc();
-			fprintf(file, "\tGET STRING INTO %s\n", register_name(e->reg));
 			break;
 		case EXPR_NAME:
 			e->reg = register_alloc();

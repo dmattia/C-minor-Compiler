@@ -6,12 +6,14 @@
 #include "decl.h"
 #include "scope.h"
 #include "scannerUtil.h"
+#include "string_list.h"
 
 extern token_t yylex();
 extern int yylineno;
 extern char* yytext;
 extern FILE* yyin;
 extern struct node *head;
+extern struct string_node *string_head;
 
 /* Clunky: Declare the parse function generated from parser.bison */
 extern int yyparse();
@@ -127,6 +129,8 @@ void typecheck_input(const char* filename) {
 }
 
 void codegen_input(const char* filename) {
+	int string_count = 0;
+	struct string_node *sn;
 	type_check_errors = 0;
 	yyin = safe_open(filename);
 	if(!yyparse()) {
@@ -149,14 +153,17 @@ void codegen_input(const char* filename) {
 		output = fopen("output.s", "w");
 		fprintf(output, ".file \"%s\"\n\n", filename);
 		fprintf(output, ".data\n");
-		// Print a few strings useful for printing non-string values
-		fprintf(output, "integer_string:\n");
-		fprintf(output, "\t.string \"\%%d\\n\"\n");
-		fprintf(output, "char_string:\n");
-		fprintf(output, "\t.string \"\%%c\\n\"\n");
+		// print out all literal strings into data
+		sn = string_head;
+		while(sn) {
+			fprintf(output, "LC%d:\n", string_count++);
+			fprintf(output, "\t.string %s\n",sn->text);
+			sn = sn->next;
+		}
 		decl_global_data_codegen(parser_result, output);
 		fprintf(output, "\n.text\n");
 		decl_global_functions_codegen(parser_result, output);
+		fprintf(output, "\n");
 		exit(0);
 	}
 }

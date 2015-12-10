@@ -151,15 +151,22 @@ void decl_codegen(struct decl *d, FILE *file) {
 	if(!d) return;
 	switch(d->type->kind) {
 		case TYPE_BOOLEAN:
-			break;
+			/* fall through */
 		case TYPE_CHARACTER:
-			break;
+			/* fall through */
 		case TYPE_INTEGER:
-			expr_codegen(d->value, file);
-			fprintf(file, "\tMOVQ %s, %s\n", register_name(d->value->reg), symbol_code(d->symbol));
-			register_free(d->value->reg);
+			if(d->value) {
+				expr_codegen(d->value, file);
+				fprintf(file, "\tMOVQ %s, %s\t\t# Setting variable %s\n", register_name(d->value->reg), symbol_code(d->symbol), d->symbol->name);
+				register_free(d->value->reg);
+			} else {
+				fprintf(file, "\tMOVQ $0, %s\t\t# Setting default value for var %s\n", symbol_code(d->symbol), d->symbol->name);
+			}
 			break;
 		case TYPE_STRING:
+			expr_codegen(d->value, file);
+			fprintf(file, "\tMOVQ %s, %s\t\t# Setting string %s\n", register_name(d->value->reg), symbol_code(d->symbol), d->symbol->name);
+			register_free(d->value->reg);
 			break;
 		case TYPE_ARRAY:
 			printf("Arrays are not currently supported in this compiler\n");
@@ -219,6 +226,8 @@ void decl_global_functions_codegen(struct decl *d, FILE *file) {
 }
 
 void decl_global_data_codegen(struct decl *d, FILE *file) {
+	struct stmt *s;
+	struct expr *e;
 	if(!d) return;
 	switch(d->type->kind) {
 		case TYPE_BOOLEAN:
@@ -232,9 +241,11 @@ void decl_global_data_codegen(struct decl *d, FILE *file) {
 			}
 			break;
 		case TYPE_STRING:
-			fprintf(file, "%s:\n", d->name);
-			if(d->value) {
-				fprintf(file, "\t.string %s\n", d->value->string_literal);
+			// All literal strings are handled by main.c
+			// Here we only need to handle declared strings that aren't set equal to anything
+			if(!d->value) {
+				fprintf(file, "%s:\n", d->name);
+				fprintf(file, "\t.string \"\"\n");
 			}
 			break;
 		case TYPE_ARRAY:
