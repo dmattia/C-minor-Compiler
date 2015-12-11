@@ -545,20 +545,20 @@ void expr_codegen(struct expr *e, FILE *file) {
 		case EXPR_DIVIDES:
 			expr_codegen(e->left, file);
 			expr_codegen(e->right, file);
-			fprintf(file, "\tMOV %s, %rax\t\t#Move left value into rax to prepare for dividing\n", register_name(e->left->reg));
-			fprintf(file, "\tCDQ\n");
+			fprintf(file, "\tMOVQ %s, %rax\t\t#Move left value into rax to prepare for dividing\n", register_name(e->left->reg));
+			fprintf(file, "\tCQTO\n");
 			fprintf(file, "\tIDIVQ %s\t\t\t# Divide %rax by the value in %s\n", register_name(e->right->reg), register_name(e->right->reg));
-			fprintf(file, "\tMOV %rax, %s\t\t# Move divided result back to non-scratch register\n", register_name(e->right->reg));
+			fprintf(file, "\tMOVQ %rax, %s\t\t# Move divided result back to non-scratch register\n", register_name(e->right->reg));
 			e->reg = e->right->reg;
 			register_free(e->left->reg);
 			break;
 		case EXPR_MOD:
 			expr_codegen(e->left, file);
 			expr_codegen(e->right, file);
-			fprintf(file, "\tMOV %s, %rax\t\t#Move left value into rax to prepare for dividing\n", register_name(e->left->reg));
-			fprintf(file, "\tCDQ\n");
+			fprintf(file, "\tMOVQ %s, %rax\t\t#Move left value into rax to prepare for dividing\n", register_name(e->left->reg));
+			fprintf(file, "\tCQTO\n");
 			fprintf(file, "\tIDIVQ %s\t\t\t# Divide %rax by the value in %s\n", register_name(e->right->reg), register_name(e->right->reg));
-			fprintf(file, "\tMOV %rdx, %s\t\t# Move remainder back to non-scratch register\n", register_name(e->right->reg));
+			fprintf(file, "\tMOVQ %rdx, %s\t\t# Move remainder back to non-scratch register\n", register_name(e->right->reg));
 			e->reg = e->right->reg;
 			register_free(e->left->reg);
 			break;
