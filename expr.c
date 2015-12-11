@@ -5,6 +5,7 @@
 #include "error.h"
 #include "register.h"
 #include "string_list.h"
+#include <string.h>
 
 extern int type_check_errors;
 extern struct string_node *string_head;
@@ -546,7 +547,7 @@ void expr_codegen(struct expr *e, FILE *file) {
 			expr_codegen(e->right, file);
 			fprintf(file, "\tMOV %s, %rax\t\t#Move left value into rax to prepare for dividing\n", register_name(e->left->reg));
 			fprintf(file, "\tCDQ\n");
-			fprintf(file, "\tIDIV %s\t\t\t# Divide %rax by the value in %s\n", register_name(e->right->reg), register_name(e->right->reg));
+			fprintf(file, "\tIDIVQ %s\t\t\t# Divide %rax by the value in %s\n", register_name(e->right->reg), register_name(e->right->reg));
 			fprintf(file, "\tMOV %rax, %s\t\t# Move divided result back to non-scratch register\n", register_name(e->right->reg));
 			e->reg = e->right->reg;
 			register_free(e->left->reg);
@@ -556,7 +557,7 @@ void expr_codegen(struct expr *e, FILE *file) {
 			expr_codegen(e->right, file);
 			fprintf(file, "\tMOV %s, %rax\t\t#Move left value into rax to prepare for dividing\n", register_name(e->left->reg));
 			fprintf(file, "\tCDQ\n");
-			fprintf(file, "\tIDIV %s\t\t\t# Divide %rax by the value in %s\n", register_name(e->right->reg), register_name(e->right->reg));
+			fprintf(file, "\tIDIVQ %s\t\t\t# Divide %rax by the value in %s\n", register_name(e->right->reg), register_name(e->right->reg));
 			fprintf(file, "\tMOV %rdx, %s\t\t# Move remainder back to non-scratch register\n", register_name(e->right->reg));
 			e->reg = e->right->reg;
 			register_free(e->left->reg);

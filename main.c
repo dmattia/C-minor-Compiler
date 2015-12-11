@@ -132,6 +132,8 @@ void typecheck_input(const char* filename) {
 void codegen_input(const char* filename) {
 	int string_count = 0;
 	struct string_node *sn;
+	char* output_filename = (char*)malloc(strlen(filename));
+	strcpy(output_filename, filename);
 	type_check_errors = 0;
 	yyin = safe_open(filename);
 	if(!yyparse()) {
@@ -151,7 +153,9 @@ void codegen_input(const char* filename) {
 		// No errors from scanning, parsing, resolving, and then typechecking
 		// Begin codegen
 		FILE *output;
-		output = fopen("output.s", "w");
+		output_filename[strlen(output_filename)-6] = 's';
+		output_filename[strlen(output_filename)-5] = '\0';
+		output = fopen(output_filename, "w");
 		fprintf(output, ".file \"%s\"\n\n", filename);
 		fprintf(output, ".data\n");
 		// print out all literal strings into data

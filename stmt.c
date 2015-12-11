@@ -195,16 +195,16 @@ void stmt_codegen( struct stmt *s, FILE *file ) {
 			expr_codegen(s->expr, file);
 			fprintf(file, "\tCMP $0, %s\n", register_name(s->expr->reg));
 			labelNum++;
-			sprintf(label_name, "l_%d", label1);
+			sprintf(label_name, "l1_%d", label1);
 			fprintf(file, "\tJE %s\n", label_name);
 			stmt_codegen(s->body, file);
 			labelNum++;
-			sprintf(label_name, "l_%d", label2);
+			sprintf(label_name, "l2_%d", label2);
 			fprintf(file, "\tJMP %s\n", label_name);
-			sprintf(label_name, "l_%d", label1);
+			sprintf(label_name, "l1_%d", label1);
 			fprintf(file, "%s:\n", label_name);
 			stmt_codegen(s->else_body, file);
-			sprintf(label_name, "l_%d", label2);
+			sprintf(label_name, "l2_%d", label2);
 			fprintf(file, "%s:\n", label_name);
 			break;
 		case STMT_FOR:
@@ -212,7 +212,7 @@ void stmt_codegen( struct stmt *s, FILE *file ) {
 			label2 = labelNum + 1;
 			expr_codegen(s->init_expr, file);
 			labelNum++;
-			sprintf(label_name, "l_%d", label1);
+			sprintf(label_name, "lf1_%d", label1);
 			fprintf(file, "%s:\n", label_name);
 			if(s->init_expr) register_free(s->init_expr->reg);
 			if(s->expr) {
@@ -224,13 +224,13 @@ void stmt_codegen( struct stmt *s, FILE *file ) {
 			}
 			fprintf(file, "\tCMP $0, %s\n", register_name(s->expr->reg));
 			labelNum++;
-			sprintf(label_name, "l_%d", label2);
+			sprintf(label_name, "lf2_%d", label2);
 			fprintf(file, "\tJE %s\n", label_name);
 			stmt_codegen(s->body, file);
 			expr_codegen(s->next_expr, file);
-			sprintf(label_name, "l_%d", label1);
+			sprintf(label_name, "lf1_%d", label1);
 			fprintf(file, "\tJMP %s\n", label_name);
-			sprintf(label_name, "l_%d", label2);
+			sprintf(label_name, "lf2_%d", label2);
 			fprintf(file, "%s:\n", label_name);
 			if(!s->expr) register_free(s->expr->reg);
 			break;

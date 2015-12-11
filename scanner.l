@@ -61,7 +61,7 @@ while							return TOKEN_WHILE;
 \]							return TOKEN_RIGHT_BRACKET;
 ({LETTER}|_)({DIGIT}|{LETTER}|_)*      			return TOKEN_IDENTIFIER;
 {DIGIT}+  						return TOKEN_INTEGER_LITERAL;
-\'({LETTER}|{DIGIT}|{ESCAPE}|[ ])\'			return TOKEN_CHAR_LITERAL;
+\'({LETTER}|{DIGIT}|{ESCAPE}|[ /])\'			return TOKEN_CHAR_LITERAL;
 \"[^"\n]*\"						return TOKEN_STRING_LITERAL;
 {WHITESPACE}+                           		/* return nothing */
 .							return TOKEN_UNRECOGNIZED;

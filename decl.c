@@ -214,6 +214,16 @@ void decl_global_functions_codegen(struct decl *d, FILE *file) {
 
 				fprintf(file, "\n\t#### Main function body\n\n");
 				stmt_codegen(d->code, file);
+
+				fprintf(file, "\n\t#### Prepare to return\n\n");
+				fprintf(file, "\tPOPQ %r15\n");
+				fprintf(file, "\tPOPQ %r14\n");
+				fprintf(file, "\tPOPQ %r13\n");
+				fprintf(file, "\tPOPQ %r12\n");
+				fprintf(file, "\tPOPQ %rbx\n");
+				fprintf(file, "\tMOVQ %rbp, %rsp\n");
+				fprintf(file, "\tPOPQ %rbp\n");
+				fprintf(file, "\tRET\n");
 			}
 	}
 	decl_global_functions_codegen(d->next, file);
