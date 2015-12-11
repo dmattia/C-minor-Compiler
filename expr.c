@@ -8,6 +8,7 @@
 
 extern int type_check_errors;
 extern struct string_node *string_head;
+extern int labelNum;
 
 struct expr * expr_create( expr_t kind, struct expr *left, struct expr *right ) {
 	struct expr *e;
@@ -182,8 +183,6 @@ void expr_resolve (struct expr *e, int quiet) {
 		}
 	} else if(e->kind == EXPR_STRING) {
 		push_string_front(e->string_literal);
-	} else if(e->kind == EXPR_ASSIGNMENT) {
-		e->left->symbol = e->right->symbol;
 	}
 }
 
@@ -382,7 +381,8 @@ struct type *expr_typecheck(struct expr *e) {
 			return type_create(TYPE_STRING, 0, 0, 0);
 			break;
 		case EXPR_NAME:
-			return e->symbol->type;
+			if (e->symbol) return e->symbol->type;
+			return type_create(TYPE_VOID, 0, 0, 0);
 			break;
 		case EXPR_ARRAY:
 			left = expr_typecheck(e->left);
@@ -409,31 +409,113 @@ void expr_codegen(struct expr *e, FILE *file) {
 	int string_count = 0, found = 0;
 	struct string_node *sn;
 	char* string_label = (char*)malloc(9);
+	char* label_name = (char*)malloc(9);
 	if(!e) return;
 	switch(e->kind) {
 		case EXPR_LIST:
-			/*
-			expr_codegen(e->left);
-			expr_codegen(e->right);
-			*/
 			break;
 		case EXPR_ASSIGNMENT:
+			expr_codegen(e->right, file);
+			fprintf(file, "\tMOV %s, %s\t\t# Assignment\n", register_name(e->right->reg), symbol_code(e->left->symbol));
+			e->reg = e->right->reg;
+			register_free(e->left->reg);
 			break;
 		case EXPR_OR:
+			expr_codegen(e->left, file);
+			expr_codegen(e->right, file);
+			fprintf(file, "\tOR %s, %s\n", register_name(e->left->reg), register_name(e->right->reg));
+			e->reg = e->right->reg;
+			register_free(e->left->reg);
 			break;
 		case EXPR_AND:
+			expr_codegen(e->left, file);
+			expr_codegen(e->right, file);
+			fprintf(file, "\tAND %s, %s\n", register_name(e->left->reg), register_name(e->right->reg));
+			e->reg = e->right->reg;
+			register_free(e->left->reg);
 			break;
 		case EXPR_LT:
+			expr_codegen(e->left, file);
+			expr_codegen(e->right, file);
+			fprintf(file, "\tCMP %s, %s\t\t\n", register_name(e->left->reg), register_name(e->right->reg));
+			fprintf(file, "\tMOV $1, %s\n", register_name(e->right->reg));
+			sprintf(label_name, "done_%d", labelNum);
+			fprintf(file, "\tJG %s\n", label_name);
+			fprintf(file, "\tMOV $0, %s\n", register_name(e->right->reg));
+			fprintf(file, "%s:\n", label_name);
+			e->reg = e->right->reg;
+			register_free(e->left->reg);
+			labelNum++;
 			break;
 		case EXPR_GT:
+			expr_codegen(e->left, file);
+			expr_codegen(e->right, file);
+			fprintf(file, "\tCMP %s, %s\t\t\n", register_name(e->left->reg), register_name(e->right->reg));
+			fprintf(file, "\tMOV $1, %s\n", register_name(e->right->reg));
+			fprintf(file, "\tMOV $1, %s\n", register_name(e->right->reg));
+			sprintf(label_name, "done_%d", labelNum);
+			fprintf(file, "\tJL %s\n", label_name);
+			fprintf(file, "\tMOV $0, %s\n", register_name(e->right->reg));
+			fprintf(file, "%s:\n", label_name);
+			e->reg = e->right->reg;
+			register_free(e->left->reg);
+			labelNum++;
 			break;
 		case EXPR_LE:
+			expr_codegen(e->left, file);
+			expr_codegen(e->right, file);
+			fprintf(file, "\tCMP %s, %s\t\t\n", register_name(e->left->reg), register_name(e->right->reg));
+			fprintf(file, "\tMOV $1, %s\n", register_name(e->right->reg));
+			fprintf(file, "\tMOV $1, %s\n", register_name(e->right->reg));
+			sprintf(label_name, "done_%d", labelNum);
+			fprintf(file, "\tJGE %s\n", label_name);
+			fprintf(file, "\tMOV $0, %s\n", register_name(e->right->reg));
+			fprintf(file, "%s:\n", label_name);
+			e->reg = e->right->reg;
+			register_free(e->left->reg);
+			labelNum++;
 			break;
 		case EXPR_GE:
+			expr_codegen(e->left, file);
+			expr_codegen(e->right, file);
+			fprintf(file, "\tCMP %s, %s\t\t\n", register_name(e->left->reg), register_name(e->right->reg));
+			fprintf(file, "\tMOV $1, %s\n", register_name(e->right->reg));
+			fprintf(file, "\tMOV $1, %s\n", register_name(e->right->reg));
+			sprintf(label_name, "done_%d", labelNum);
+			fprintf(file, "\tJLE %s\n", label_name);
+			fprintf(file, "\tMOV $0, %s\n", register_name(e->right->reg));
+			fprintf(file, "%s:\n", label_name);
+			e->reg = e->right->reg;
+			register_free(e->left->reg);
+			labelNum++;
 			break;
 		case EXPR_NOT_EQUALS:
+			expr_codegen(e->left, file);
+			expr_codegen(e->right, file);
+			fprintf(file, "\tCMP %s, %s\t\t\n", register_name(e->left->reg), register_name(e->right->reg));
+			fprintf(file, "\tMOV $1, %s\n", register_name(e->right->reg));
+			fprintf(file, "\tMOV $1, %s\n", register_name(e->right->reg));
+			sprintf(label_name, "done_%d", labelNum);
+			fprintf(file, "\tJNE %s\n", label_name);
+			fprintf(file, "\tMOV $0, %s\n", register_name(e->right->reg));
+			fprintf(file, "%s:\n", label_name);
+			e->reg = e->right->reg;
+			register_free(e->left->reg);
+			labelNum++;
 			break;
 		case EXPR_EQUALS:
+			expr_codegen(e->left, file);
+			expr_codegen(e->right, file);
+			fprintf(file, "\tCMP %s, %s\t\t\n", register_name(e->left->reg), register_name(e->right->reg));
+			fprintf(file, "\tMOV $1, %s\n", register_name(e->right->reg));
+			fprintf(file, "\tMOV $1, %s\n", register_name(e->right->reg));
+			sprintf(label_name, "done_%d", labelNum);
+			fprintf(file, "\tJE %s\n", label_name);
+			fprintf(file, "\tMOV $0, %s\n", register_name(e->right->reg));
+			fprintf(file, "%s:\n", label_name);
+			e->reg = e->right->reg;
+			register_free(e->left->reg);
+			labelNum++;
 			break;
 		case EXPR_ADD:
 			expr_codegen(e->left, file);
@@ -443,28 +525,97 @@ void expr_codegen(struct expr *e, FILE *file) {
 			register_free(e->left->reg);
 			break;
 		case EXPR_MINUS:
+			expr_codegen(e->left, file);
+			expr_codegen(e->right, file);
+			fprintf(file, "\tSUB %s, %s\n", register_name(e->right->reg), register_name(e->left->reg));
+			e->reg = e->left->reg;
+			register_free(e->right->reg);
 			break;
 		case EXPR_TIMES:
+			expr_codegen(e->left, file);
+			expr_codegen(e->right, file);
+			fprintf(file, "\tMOV %s, %rax\t\t#Move left value into rax to prepare for multiplying\n", register_name(e->left->reg));
+			fprintf(file, "\tIMUL %s\t\t# Multiply %rax by the value in %s\n", register_name(e->right->reg), register_name(e->right->reg));
+			fprintf(file, "\tMOV %rax, %s\t\t# Move multiplied result back to non-scratch register\n", register_name(e->right->reg));
+			e->reg = e->right->reg;
+			register_free(e->left->reg);
 			break;
 		case EXPR_DIVIDES:
+			expr_codegen(e->left, file);
+			expr_codegen(e->right, file);
+			fprintf(file, "\tMOV %s, %rax\t\t#Move left value into rax to prepare for dividing\n", register_name(e->left->reg));
+			fprintf(file, "\tCDQ\n");
+			fprintf(file, "\tIDIV %s\t\t\t# Divide %rax by the value in %s\n", register_name(e->right->reg), register_name(e->right->reg));
+			fprintf(file, "\tMOV %rax, %s\t\t# Move divided result back to non-scratch register\n", register_name(e->right->reg));
+			e->reg = e->right->reg;
+			register_free(e->left->reg);
 			break;
 		case EXPR_MOD:
+			expr_codegen(e->left, file);
+			expr_codegen(e->right, file);
+			fprintf(file, "\tMOV %s, %rax\t\t#Move left value into rax to prepare for dividing\n", register_name(e->left->reg));
+			fprintf(file, "\tCDQ\n");
+			fprintf(file, "\tIDIV %s\t\t\t# Divide %rax by the value in %s\n", register_name(e->right->reg), register_name(e->right->reg));
+			fprintf(file, "\tMOV %rdx, %s\t\t# Move remainder back to non-scratch register\n", register_name(e->right->reg));
+			e->reg = e->right->reg;
+			register_free(e->left->reg);
 			break;
 		case EXPR_POWER:
+			expr_codegen(e->left, file);
+			expr_codegen(e->right, file);
+			fprintf(file, "\tMOV %s, %rdi\t\t# Move first argument for base of power\n", register_name(e->left->reg));
+			fprintf(file, "\tMOV %s, %rsi\t\t# Move second argument for exponent\n", register_name(e->right->reg));
+			fprintf(file, "\n\tPUSHQ %r10\n");
+			fprintf(file, "\tPUSHQ %r11\n");
+			fprintf(file, "\n\tCALL integer_power\n\n");
+			fprintf(file, "\tPOPQ %r11\n");
+			fprintf(file, "\tPOPQ %r10\n");
+			fprintf(file, "\tMOV %rax, %s\t\t# Move result of integer_power into register\n", register_name(e->right->reg));
+			e->reg = e->right->reg;
+			register_free(e->left->reg);
 			break;
 		case EXPR_NEGATIVE:
+			expr_codegen(e->right, file);
+			fprintf(file, "\tNEG %s\t\t# Negate the value\n", register_name(e->right->reg));
+			e->reg = e->right->reg;
 			break;
 		case EXPR_NOT:
+			expr_codegen(e->right, file);
+			fprintf(file, "\tSUB $1, %s\t\t# Negate the boolean\n", register_name(e->right->reg));
+			e->reg = e->right->reg;
 			break;
 		case EXPR_PRE_INCREMENT:
+			expr_codegen(e->right, file);
+			fprintf(file, "\tINC %s\n", register_name(e->right->reg));
+			fprintf(file, "\tMOV %s, %s\n", register_name(e->right->reg), symbol_code(e->right->symbol));
+			e->reg = e->right->reg;
 			break;
 		case EXPR_PRE_DECREMENT:
+			expr_codegen(e->right, file);
+			fprintf(file, "\tDEC %s\n", register_name(e->right->reg));
+			fprintf(file, "\tMOV %s, %s\n", register_name(e->right->reg), symbol_code(e->right->symbol));
+			e->reg = e->right->reg;
 			break;
 		case EXPR_POST_INCREMENT:
+			// TODO: Delay incrementing
+			expr_codegen(e->left, file);
+			fprintf(file, "\tINC %s\n", register_name(e->left->reg));
+			fprintf(file, "\tMOV %s, %s\n", register_name(e->left->reg), symbol_code(e->left->symbol));
+			e->reg = e->left->reg;
 			break;
 		case EXPR_POST_DECREMENT:
+			expr_codegen(e->left, file);
+			fprintf(file, "\tDEC %s\n", register_name(e->left->reg));
+			fprintf(file, "\tMOV %s, %s\n", register_name(e->left->reg), symbol_code(e->left->symbol));
+			e->reg = e->left->reg;
 			break;
 		case EXPR_FUNCTION:
+			fprintf(file, "\n\tPUSH %r10\n");
+			fprintf(file, "\tPUSH %r11\n");
+			fprintf(file, "\n\tCALL %s\n\n", e->left->name);
+			fprintf(file, "\tPOP %r11\n");
+			fprintf(file, "\tPOP %r10\n");
+			e->reg = 0;
 			break;
 		case EXPR_BOOLEAN:
 			e->reg = register_alloc();			
@@ -479,6 +630,7 @@ void expr_codegen(struct expr *e, FILE *file) {
 			fprintf(file, "\tMOV $%d,  %s\n", e->literal_value, register_name(e->reg));
 			break;
 		case EXPR_STRING:
+			e->reg = register_alloc();
 			// find the string
 			sn = string_head;
 			while(sn) {
@@ -497,7 +649,6 @@ void expr_codegen(struct expr *e, FILE *file) {
 				printf("Could not find string %s in data\n", e->string_literal);
 				exit(1);
 			}
-			e->reg = register_alloc();
 			break;
 		case EXPR_NAME:
 			e->reg = register_alloc();

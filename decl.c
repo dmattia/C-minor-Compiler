@@ -198,8 +198,6 @@ void decl_global_functions_codegen(struct decl *d, FILE *file) {
 				fprintf(file, "\tSUBQ $%d, %rsp\t\t#allocate %d more local variables\n\n", 8*local_vars, local_vars);
 
 				fprintf(file, "\tPUSHQ %rbx\n");
-				fprintf(file, "\tPUSHQ %r10\n");
-				fprintf(file, "\tPUSHQ %r11\n");
 				fprintf(file, "\tPUSHQ %r12\n");
 				fprintf(file, "\tPUSHQ %r13\n");
 				fprintf(file, "\tPUSHQ %r14\n");
@@ -207,19 +205,6 @@ void decl_global_functions_codegen(struct decl *d, FILE *file) {
 
 				fprintf(file, "\n\t#### Main function body\n\n");
 				stmt_codegen(d->code, file);
-
-				fprintf(file, "\n\t#### Function ending\n\n");
-				fprintf(file, "\tPOPQ %r15\n");
-				fprintf(file, "\tPOPQ %r14\n");
-				fprintf(file, "\tPOPQ %r13\n");
-				fprintf(file, "\tPOPQ %r12\n");
-				fprintf(file, "\tPOPQ %r11\n");
-				fprintf(file, "\tPOPQ %r10\n");
-				fprintf(file, "\tPOPQ %rbx\n");
-
-				fprintf(file, "\tMOVQ %rbp, %rsp\n");
-				fprintf(file, "\tPOPQ %rbp\n");
-				fprintf(file, "\tRET");
 			}
 	}
 	decl_global_functions_codegen(d->next, file);
@@ -246,6 +231,9 @@ void decl_global_data_codegen(struct decl *d, FILE *file) {
 			if(!d->value) {
 				fprintf(file, "%s:\n", d->name);
 				fprintf(file, "\t.string \"\"\n");
+			} else {
+				fprintf(file, "%s:\n", d->name);
+				fprintf(file, "\t.string %s\n", d->value->string_literal);
 			}
 			break;
 		case TYPE_ARRAY:

@@ -20,6 +20,7 @@ extern int yyparse();
 /* Clunky: Declare the result of the parser from parser.bison */
 extern struct decl *parser_result;
 int type_check_errors;
+int labelNum; // the number of labels produced in the assembly code
 
 void scan_input(const char*);
 void parse_input(const char*);
@@ -162,8 +163,8 @@ void codegen_input(const char* filename) {
 		}
 		decl_global_data_codegen(parser_result, output);
 		fprintf(output, "\n.text\n");
+		labelNum = 0;
 		decl_global_functions_codegen(parser_result, output);
-		fprintf(output, "\n");
 		exit(0);
 	}
 }

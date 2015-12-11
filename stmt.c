@@ -1,8 +1,10 @@
 #include <stdlib.h>
 #include "stmt.h"
 #include "scope.h"
+#include "register.h"
 
 extern int type_check_errors;
+extern int labelNum;
 
 struct stmt * stmt_create( stmt_kind_t kind, struct decl *d, struct expr *init_expr, struct expr *e, struct expr *next_expr, struct stmt *body, struct stmt *else_body ) {
 	struct stmt *s;
@@ -176,7 +178,9 @@ void stmt_codegen( struct stmt *s, FILE *file ) {
 	struct string_node *sn;
 	int string_count = 0;
 	char* string_label = (char*)malloc(9);
+	char* label_name = (char*)malloc(9);
 	struct symbol *sym;
+	int label1, label2;
 	if(!s) return;
 	switch(s->kind) {
 		case STMT_DECL:
@@ -186,8 +190,48 @@ void stmt_codegen( struct stmt *s, FILE *file ) {
 			expr_codegen(s->expr, file);
 			break;
 		case STMT_IF_ELSE:
+			label1 = labelNum;
+			label2 = labelNum + 1;
+			expr_codegen(s->expr, file);
+			fprintf(file, "\tCMP $0, %s\n", register_name(s->expr->reg));
+			labelNum++;
+			sprintf(label_name, "l_%d", label1);
+			fprintf(file, "\tJE %s\n", label_name);
+			stmt_codegen(s->body, file);
+			labelNum++;
+			sprintf(label_name, "l_%d", label2);
+			fprintf(file, "\tJMP %s\n", label_name);
+			sprintf(label_name, "l_%d", label1);
+			fprintf(file, "%s:\n", label_name);
+			stmt_codegen(s->else_body, file);
+			sprintf(label_name, "l_%d", label2);
+			fprintf(file, "%s:\n", label_name);
 			break;
 		case STMT_FOR:
+			label1 = labelNum;
+			label2 = labelNum + 1;
+			expr_codegen(s->init_expr, file);
+			labelNum++;
+			sprintf(label_name, "l_%d", label1);
+			fprintf(file, "%s:\n", label_name);
+			if(s->expr) {
+				expr_codegen(s->expr, file);
+			} else {
+				s->expr = expr_create(EXPR_BOOLEAN, 0, 0);
+				s->expr->reg = register_alloc();
+				fprintf(file, "\tMOV $1, %s\n", register_name(s->expr->reg));
+			}
+			fprintf(file, "\tCMP $0, %s\n", register_name(s->expr->reg));
+			labelNum++;
+			sprintf(label_name, "l_%d", label2);
+			fprintf(file, "\tJE %s\n", label_name);
+			stmt_codegen(s->body, file);
+			expr_codegen(s->next_expr, file);
+			sprintf(label_name, "l_%d", label1);
+			fprintf(file, "\tJMP %s\n", label_name);
+			sprintf(label_name, "l_%d", label2);
+			fprintf(file, "%s:\n", label_name);
+			if(!s->expr) register_free(s->expr->reg);
 			break;
 		case STMT_WHILE:
 			printf("While loops not implemented\n");
@@ -207,7 +251,24 @@ void stmt_codegen( struct stmt *s, FILE *file ) {
 					case EXPR_LIST:
 						break;
 					case EXPR_ASSIGNMENT:
-						// TODO: Look up type of var assigned to
+						switch(expr_typecheck(e->left)->kind) {
+							case TYPE_BOOLEAN:
+								fprintf(file, "\n\tCALL print_boolean\n\n");
+								break;
+							case TYPE_CHARACTER:
+								fprintf(file, "\n\tCALL print_character\n\n");
+								break;
+							case TYPE_INTEGER:
+								fprintf(file, "\n\tCALL print_integer\n\n");
+								break;
+							case TYPE_STRING:
+								fprintf(file, "\n\tCALL print_string\n\n");
+								break;
+							default:
+								fprintf(file, "\n\t# Tried to print but couldn't determind type\n\n");
+								break;
+								break;
+						}
 						break;
 					case EXPR_OR:
 					case EXPR_AND:
@@ -217,6 +278,7 @@ void stmt_codegen( struct stmt *s, FILE *file ) {
 					case EXPR_GE:
 					case EXPR_NOT_EQUALS:
 					case EXPR_EQUALS:
+					case EXPR_NOT:
 					case EXPR_BOOLEAN:
 						fprintf(file, "\n\tCALL print_boolean\n\n");
 						break;
@@ -227,7 +289,6 @@ void stmt_codegen( struct stmt *s, FILE *file ) {
 					case EXPR_MOD:
 					case EXPR_POWER:
 					case EXPR_NEGATIVE:
-					case EXPR_NOT:
 					case EXPR_PRE_INCREMENT:
 					case EXPR_PRE_DECREMENT:
 					case EXPR_POST_INCREMENT:
@@ -236,7 +297,22 @@ void stmt_codegen( struct stmt *s, FILE *file ) {
 						fprintf(file, "\n\tCALL print_integer\n\n");
 						break;
 					case EXPR_FUNCTION:
-						// TODO: Look up function type. switch on it
+						switch(expr_typecheck(e->left)->kind) {
+							case TYPE_BOOLEAN:
+								fprintf(file, "\n\tCALL print_boolean\n\n");
+								break;
+							case TYPE_CHARACTER:
+								fprintf(file, "\n\tCALL print_character\n\n");
+								break;
+							case TYPE_INTEGER:
+								fprintf(file, "\n\tCALL print_integer\n\n");
+								break;
+							case TYPE_STRING:
+								fprintf(file, "\n\tCALL print_string\n\n");
+								break;
+							default:
+								break;
+						}
 						break;
 					case EXPR_CHAR:
 						fprintf(file, "\n\tCALL print_character\n\n");
@@ -247,6 +323,7 @@ void stmt_codegen( struct stmt *s, FILE *file ) {
 					case EXPR_NAME:
 						switch(expr_typecheck(e->left)->kind) {
 							case TYPE_BOOLEAN:
+								fprintf(file, "\n\tCALL print_boolean\n\n");
 								break;
 							case TYPE_CHARACTER:
 								fprintf(file, "\n\tCALL print_character\n\n");
@@ -277,9 +354,18 @@ void stmt_codegen( struct stmt *s, FILE *file ) {
 			expr_codegen(s->expr, file);
 			fprintf(file, "\tMOV %s, %rax\t\t# Setup rax for returning\n", register_name(s->expr->reg));
 			register_free(s->expr->reg);
+			fprintf(file, "\n\t#### Prepare to return\n\n");
+			fprintf(file, "\tPOPQ %r15\n");
+			fprintf(file, "\tPOPQ %r14\n");
+			fprintf(file, "\tPOPQ %r13\n");
+			fprintf(file, "\tPOPQ %r12\n");
+			fprintf(file, "\tPOPQ %rbx\n");
+			fprintf(file, "\tMOVQ %rbp, %rsp\n");
+			fprintf(file, "\tPOPQ %rbp\n");
+			fprintf(file, "\tRET\n");
 			break;
 		case STMT_BLOCK:
-			/* do nothing */
+			stmt_codegen(s->body, file);
 			break;
 	}
 	stmt_codegen(s->next, file);
