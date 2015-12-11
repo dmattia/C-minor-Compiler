@@ -406,10 +406,11 @@ struct type *expr_typecheck(struct expr *e) {
 }
 
 void expr_codegen(struct expr *e, FILE *file) {
-	int string_count = 0, found = 0;
+	int string_count = 0, found = 0, count = 1;
 	struct string_node *sn;
 	char* string_label = (char*)malloc(9);
 	char* label_name = (char*)malloc(9);
+	struct expr *temp_ptr;
 	if(!e) return;
 	switch(e->kind) {
 		case EXPR_LIST:
@@ -610,12 +611,27 @@ void expr_codegen(struct expr *e, FILE *file) {
 			e->reg = e->left->reg;
 			break;
 		case EXPR_FUNCTION:
+			// setup function args
+			fprintf(file, "\tMOV $0, %rax\n");
+			temp_ptr = e->right;			
+			while(temp_ptr) {
+				if(count > 6) {
+					printf("You may only supple 6 arguments to a function\n");
+					exit(1);
+				}
+				expr_codegen(temp_ptr->left, file);
+				fprintf(file, "\tMOV %s, %s\n", register_name(temp_ptr->left->reg), num_to_arg(count++));
+				temp_ptr = temp_ptr->right;
+			}
+
+			// call function
 			fprintf(file, "\n\tPUSH %r10\n");
 			fprintf(file, "\tPUSH %r11\n");
 			fprintf(file, "\n\tCALL %s\n\n", e->left->name);
 			fprintf(file, "\tPOP %r11\n");
 			fprintf(file, "\tPOP %r10\n");
-			e->reg = 0;
+			e->reg = register_alloc();
+			fprintf(file, "\tMOV %rax, %s\n", register_name(e->reg));
 			break;
 		case EXPR_BOOLEAN:
 			e->reg = register_alloc();			

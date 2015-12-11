@@ -214,6 +214,7 @@ void stmt_codegen( struct stmt *s, FILE *file ) {
 			labelNum++;
 			sprintf(label_name, "l_%d", label1);
 			fprintf(file, "%s:\n", label_name);
+			if(s->init_expr) register_free(s->init_expr->reg);
 			if(s->expr) {
 				expr_codegen(s->expr, file);
 			} else {
@@ -368,6 +369,7 @@ void stmt_codegen( struct stmt *s, FILE *file ) {
 			stmt_codegen(s->body, file);
 			break;
 	}
+	free_all();
 	stmt_codegen(s->next, file);
 }
 

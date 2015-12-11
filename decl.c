@@ -182,7 +182,8 @@ void decl_codegen(struct decl *d, FILE *file) {
 }
 
 void decl_global_functions_codegen(struct decl *d, FILE *file) {
-	int local_vars;
+	int local_vars, count = 1;
+	struct param_list *param_ptr;
 	if(!d) return;
 	if (d->type->kind == TYPE_FUNCTION) {
 			fprintf(file, "\n.global %s\n", d->name);
@@ -192,7 +193,15 @@ void decl_global_functions_codegen(struct decl *d, FILE *file) {
 				fprintf(file, "\tPUSHQ %rbp\n");
 				fprintf(file, "\tMOVQ %rsp, %rbp\n\n");
 
-				// TODO: Handle parameter list variables
+				param_ptr = d->type->params;
+				while(param_ptr) {
+					if(count > 6) {
+						printf("You may only supply six function arguments\n");
+						exit(1);
+					}
+					fprintf(file, "\tPUSHQ %s\n", num_to_arg(count++));
+					param_ptr = param_ptr->next;
+				}
 				
 				local_vars = stmt_count_local_variables(d->code);
 				fprintf(file, "\tSUBQ $%d, %rsp\t\t#allocate %d more local variables\n\n", 8*local_vars, local_vars);

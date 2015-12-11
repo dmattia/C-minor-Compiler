@@ -52,3 +52,27 @@ void register_free(int r) {
 	}
 	regs[r] = 0;
 }
+
+char* num_to_arg(int i) {
+	switch(i) {
+		case 1: return "%rdi";
+		case 2: return "%rsi";
+		case 3: return "%rdx";
+		case 4: return "%rcx";
+		case 5: return "%r8";
+		case 6: return "%r9";
+		default:
+			printf("Out of bounds for argument error\n");
+			exit(1);
+	}
+}
+
+void free_all() {
+	register_free(1);
+	register_free(10);
+	register_free(11);
+	register_free(12);
+	register_free(13);
+	register_free(14);
+	register_free(15);
+}
